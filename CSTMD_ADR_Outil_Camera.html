@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outil CSTMD — ADR 2025</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#1a1a2e;min-height:100vh}
+.topbar{background:#0d1b2a;color:#fff;padding:12px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.topbar-title{font-size:16px;font-weight:600;letter-spacing:0.02em}
+.topbar-sub{font-size:12px;color:#8899aa;margin-left:auto}
+.badge-adr{background:#1e6fbf;color:#fff;font-size:11px;padding:3px 10px;border-radius:4px;font-weight:600}
+.app{max-width:980px;margin:0 auto;padding:20px 16px}
+.nav{display:flex;gap:4px;margin-bottom:20px;background:#fff;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.nav-btn{flex:1;padding:8px 4px;border:none;background:none;font-size:12px;font-weight:500;color:#667;border-radius:7px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-btn .nb-icon{font-size:18px}
+.nav-btn:hover{background:#f0f4ff;color:#1e6fbf}
+.nav-btn.active{background:#1e6fbf;color:#fff}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;color:#0d1b2a;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #eef0f4}
+.section-lbl{font-size:11px;font-weight:600;color:#8899bb;text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px}
+.field-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.fg{flex:1;min-width:180px}
+.fg label{display:block;font-size:12px;font-weight:500;color:#445;margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:8px 11px;font-size:13px;border:1.5px solid #dde2ec;border-radius:8px;background:#fff;color:#1a1a2e;transition:border 0.15s}
+.fg input:focus,.fg select:focus{outline:none;border-color:#1e6fbf;box-shadow:0 0 0 3px rgba(30,111,191,0.12)}
+.fg input.autofilled{background:#f0f7ff;border-color:#7fb8ef;color:#1a4a7a}
+.un-search-wrap{position:relative}
+.un-search-wrap input{padding-right:36px;font-size:14px;font-weight:600}
+.un-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:18px;color:#1e6fbf}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #1e6fbf;border-radius:8px;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.12);max-height:240px;overflow-y:auto;margin-top:2px}
+.ac-item{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f2f5;transition:background 0.1s}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.selected{background:#f0f7ff}
+.ac-item .ac-un{font-weight:700;color:#1e6fbf;margin-right:8px}
+.ac-item .ac-name{color:#334}
+.ac-item .ac-class{float:right;font-size:11px;color:#889}
+.result-ok{background:#f0faf0;border:1.5px solid #7ac97a;color:#1a5c1a;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.result-warn{background:#fffbf0;border:1.5px solid #f5c842;color:#7a5c00;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.result-ko{background:#fff4f4;border:1.5px solid #e87878;color:#7a1a1a;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.result-info{background:#f0f6ff;border:1.5px solid #7ab4ef;color:#1a3a6a;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.rb-title{font-weight:600;font-size:13px;margin-bottom:5px}
+.rb-body{font-size:12px;line-height:1.7}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f0f2f5}
+.checklist-item:last-child{border-bottom:none}
+.checklist-item input[type=checkbox]{margin-top:2px;cursor:pointer;accent-color:#1e6fbf;width:15px;height:15px}
+.checklist-item label{font-size:13px;line-height:1.5;cursor:pointer;flex:1}
+.check-ref{font-size:11px;color:#889;display:block;margin-top:1px}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid transparent}
+.chip-blue{background:#e6f0fb;color:#185fa5;border-color:#b5d4f4}
+.chip-orange{background:#fff3e0;color:#a04000;border-color:#f9a825}
+.chip-red{background:#ffeaea;color:#a01010;border-color:#ef9a9a}
+.chip-green{background:#eaf5ea;color:#1a5c1a;border-color:#a5d6a7}
+.chip-gray{background:#f4f4f6;color:#556;border-color:#ccc}
+.big-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#1e6fbf;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;transition:background 0.15s}
+.big-btn:hover{background:#155a99}
+.big-btn.sec{background:#f0f4fa;color:#334;border:1.5px solid #dde2ec}
+.big-btn.sec:hover{background:#e0e8f4}
+.transport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.tc{border:1.5px solid #dde2ec;border-radius:10px;padding:12px 8px;cursor:pointer;text-align:center;transition:all 0.15s;background:#fff}
+.tc:hover{background:#f0f6ff;border-color:#7ab4ef}
+.tc.sel{border:2px solid #1e6fbf;background:#e8f2ff}
+.tc-icon{font-size:24px;margin-bottom:4px}
+.tc-name{font-size:12px;font-weight:600;color:#334}
+.tc-sub{font-size:11px;color:#889}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:#f8faff;border-radius:10px;padding:14px;text-align:center;border:1px solid #eef}
+.stat-val{font-size:26px;font-weight:700}
+.stat-lbl{font-size:11px;color:#889;margin-top:2px}
+.progress-bar{height:8px;background:#e8edf4;border-radius:4px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#1e6fbf,#42a5f5);border-radius:4px;transition:width 0.4s}
+.hidden{display:none}
+.ref-tag{display:inline-block;background:#e8f0f8;color:#1a3a6a;font-size:10px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:500}
+.info-strip{background:#fff9e6;border-left:4px solid #f5c842;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#5a4000;margin-bottom:12px;line-height:1.6}
+.bilan-cat{margin-bottom:14px}
+.bilan-cat-title{font-size:12px;font-weight:700;color:#1e6fbf;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #e8f0f8}
+.bilan-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f4f6f9;font-size:13px}
+.bilan-item:last-child{border-bottom:none}
+.bi-icon{font-size:16px;flex-shrink:0}
+.bi-ok{color:#2e7d32}
+.bi-ko{color:#c62828}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-ok{background:#c8e6c9;color:#1b5e20}
+.badge-ko{background:#ffcdd2;color:#b71c1c}
+.badge-warn{background:#fff9c4;color:#f57f17}
+.label-box{border:2px solid #333;border-radius:6px;padding:10px;margin:4px;text-align:center;font-weight:700;min-width:90px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;color:#0d1b2a}
+.modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:#889;margin-top:-4px}
+.rapport-content{font-size:13px;line-height:1.8;white-space:pre-wrap;background:#f8faff;padding:16px;border-radius:8px;border:1px solid #dde2ec}
+.loading-dots::after{content:'...';animation:dots 1.5s infinite}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span style="font-size:22px">🛡️</span>
+  <div>
+    <div class="topbar-title">Outil CSTMD — Transport Matières Dangereuses</div>
+    <div style="font-size:11px;color:#8899aa">Route uniquement · ADR 2025</div>
+  </div>
+  <div class="topbar-sub">
+    <span class="badge-adr">ADR 2025</span>
+  </div>
+</div>
+
+<div class="app">
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('identification')"><span class="nb-icon">🔍</span><span>Identification</span></button>
+    <button class="nav-btn" onclick="showTab('melanges')"><span class="nb-icon">🧪</span><span>Mélanges</span></button>
+    <button class="nav-btn" onclick="showTab('conditionnement')"><span class="nb-icon">📦</span><span>Conditionnement</span></button>
+    <button class="nav-btn" onclick="showTab('etiquetage')"><span class="nb-icon">🏷️</span><span>Étiquetage</span></button>
+    <button class="nav-btn" onclick="showTab('transport')"><span class="nb-icon">🚛</span><span>Véhicule</span></button>
+    <button class="nav-btn" onclick="showTab('documents')"><span class="nb-icon">📄</span><span>Documents</span></button>
+    <button class="nav-btn" onclick="showTab('bilan')"><span class="nb-icon">✅</span><span>Bilan</span></button>
+    <button class="nav-btn" onclick="showTab('camera')"><span class="nb-icon">📷</span><span>Caméra</span></button>
+  </div>
+
+  <!-- IDENTIFICATION -->
+  <div id="tab-identification">
+    <div class="card">
+      <div class="card-title">🔍 Identification de la matière dangereuse</div>
+      <div class="info-strip">💡 Saisissez le numéro ONU — les champs se remplissent automatiquement depuis la base ADR 2025.</div>
+
+      <div class="section-lbl">Numéro ONU</div>
+      <div class="field-row">
+        <div class="fg" style="max-width:220px">
+          <label>Numéro ONU *</label>
+          <div class="un-search-wrap">
+            <input type="text" id="un-number" placeholder="ex: 1203" maxlength="4" oninput="onUNSearch(this.value)" autocomplete="off">
+            <span class="un-icon">🔎</span>
+            <div class="autocomplete-list hidden" id="ac-list"></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Désignation officielle de transport</label>
+          <input type="text" id="dot-name" placeholder="Auto-rempli ou manuel" id="dot-name">
+        </div>
+      </div>
+
+      <div class="section-lbl">Données réglementaires (auto-remplissage)</div>
+      <div class="field-row">
+        <div class="fg">
+          <label>Classe ADR</label>
+          <input type="text" id="classe" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>Groupe d'emballage (GE)</label>
+          <input type="text" id="ge" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>N° de danger (Kemler)</label>
+          <input type="text" id="kemler" placeholder="—" readonly style="background:#f8faff">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="fg">
+          <label>Code tunnel (CTT)</label>
+          <input type="text" id="tunnel" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>Étiquette(s) requise(s)</label>
+          <input type="text" id="etiq-auto" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>Polluant marin</label>
+          <input type="text" id="pol-marin" placeholder="—" readonly style="background:#f8faff">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="fg">
+          <label>Code LQ (col.7a)</label>
+          <input type="text" id="lq-code" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>Code EQ (col.7b)</label>
+          <input type="text" id="eq-code" placeholder="—" readonly style="background:#f8faff">
+        </div>
+        <div class="fg">
+          <label>Quantité totale (kg ou L)</label>
+          <input type="number" id="quantite" placeholder="ex: 500" min="0" oninput="checkSeuils()">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="fg">
+          <label>Secteur client</label>
+          <select id="secteur">
+            <option value="">— sélectionner —</option>
+            <option value="garage">Garage / automobile</option>
+            <option value="industrie">Industrie / chimie</option>
+            <option value="batiment">Bâtiment / peintures</option>
+            <option value="collectivite">Collectivité / municipal</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Dispositions spéciales (col.6)</label>
+          <input type="text" id="disp-spec" placeholder="—" readonly style="background:#f8faff">
+        </div>
+      </div>
+
+      <div id="seuil-result" class="result-info">
+        <div class="rb-title">ℹ️ Saisissez un numéro ONU pour démarrer.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÉLANGES -->
+  <div id="tab-melanges" class="hidden">
+    <div class="card">
+      <div class="card-title">🧪 Identification des mélanges & déchets composites</div>
+      <div class="info-strip">💡 Ajoutez chaque composant du mélange. L'outil détermine le code UN dominant, les incompatibilités et la désignation officielle N.S.A. selon l'ADR 2.1.3.</div>
+
+      <div class="section-lbl">Cas typiques terrain (accès rapide)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('huile_liq_refroid')">🔧 Huile vidange + liquide refroidissement</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('peinture_emballages')">🎨 Pots peinture + emballages souillés</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('solvants_mixtes')">🧴 Solvants mixtes en bidon</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('aerosols_divers')">💨 Aérosols divers (infl + non infl)</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('acides_bases')">⚗️ Acide + base mélangés ⛔</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('piles_batteries')">🔋 Piles + batteries mixtes</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('boues_garage')">🏭 Boues + huiles + chiffons garage</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('dechets_peintre')">🖌️ Déchets peintre (peinture+solvant+aérosol)</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('solvants_chlores')">☠️ Solvants chlorés + dégraissant</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('dechets_menagers')">🏙️ Déchets ménagers dangereux mixtes</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('eaux_huileuses')">💧 Eaux huileuses + dégraissant base eau</button>
+        <button class="nav-btn" style="flex:0 0 auto;padding:7px 12px;font-size:12px" onclick="loadPreset('acides_industrie')">🏗️ Acides industrie mixtes</button>
+      </div>
+
+      <div class="section-lbl">Composants du mélange / colis composite</div>
+      <div id="composants-list" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+        <div class="fg" style="min-width:160px;max-width:200px">
+          <label>Type de composant</label>
+          <select id="new-comp-type">
+            <option value="">— sélectionner —</option>
+            <optgroup label="🔧 Garage / Auto">
+              <option value="huile_vidange">Huile de vidange usagée</option>
+              <option value="huile_boite">Huile de boîte de vitesses</option>
+              <option value="huile_hydraulique">Huile hydraulique</option>
+              <option value="liq_refroid">Liquide de refroidissement (glycol)</option>
+              <option value="liq_frein">Liquide de frein</option>
+              <option value="essence_residus">Résidus d'essence / carburant</option>
+              <option value="gasoil_residus">Résidus de gasoil</option>
+              <option value="carburant_contamine">Carburant contaminé (eau/mélange)</option>
+              <option value="batterie_acide">Batterie acide plomb (électrolyte)</option>
+              <option value="batterie_lithium">Batterie / accumulateur lithium-ion</option>
+              <option value="batterie_nimh">Batterie NiMH / NiCd</option>
+              <option value="antigel">Antigel / liquide lave-glace</option>
+              <option value="filtre_huile">Filtres à huile souillés</option>
+              <option value="chiffons_souilles">Chiffons / absorbants souillés</option>
+              <option value="boues_huilleuses">Boues huileuses (fond de cuve)</option>
+              <option value="eaux_huileuses">Eaux huileuses / émulsions</option>
+            </optgroup>
+            <optgroup label="🎨 Bâtiment / Peintures">
+              <option value="peinture_solvant">Peinture solvantée / laque / vernis</option>
+              <option value="peinture_eau">Peinture à l'eau (résidus secs)</option>
+              <option value="fonds_pateux">Fonds pâteux / résidus peinture solvant</option>
+              <option value="solvant_nettoyage">Solvant de nettoyage / white-spirit</option>
+              <option value="diluant_peinture">Diluant peinture / thinner</option>
+              <option value="colle_solvant">Colle solvantée / mastic</option>
+              <option value="resine_epoxy">Résine époxy / durcisseur</option>
+              <option value="emballage_souille">Emballage souillé solvant (vide non dégazé)</option>
+              <option value="emballage_souille_corr">Emballage souillé corrosif</option>
+              <option value="aerosol_infl">Aérosol inflammable incomplet/percé</option>
+              <option value="aerosol_non_infl">Aérosol non inflammable (laque eau, déo)</option>
+            </optgroup>
+            <optgroup label="🏭 Industrie / Chimie">
+              <option value="acide_faible">Acide faible en solution (pH&gt;3)</option>
+              <option value="acide_fort">Acide fort en solution (pH&lt;3)</option>
+              <option value="acide_chlorhydrique">Acide chlorhydrique</option>
+              <option value="acide_sulfurique">Acide sulfurique dilué</option>
+              <option value="acide_nitrique">Acide nitrique dilué ⚠️</option>
+              <option value="base_faible">Base faible / lessiviel (pH&lt;12)</option>
+              <option value="base_forte">Base forte (soude, potasse)</option>
+              <option value="degraissant_base_eau">Dégraissant base eau</option>
+              <option value="degraissant_solvant">Dégraissant solvant</option>
+              <option value="solvant_chlore">Solvant chloré (TCE, PCE, DCM...)</option>
+              <option value="huile_industrielle">Huile industrielle / hydraulique minérale</option>
+              <option value="huile_synthetique">Huile synthétique</option>
+              <option value="dechet_photo">Déchet photochimique</option>
+              <option value="toner_imprimante">Toner / cartouche d'encre</option>
+              <option value="produit_labo">Déchet de laboratoire N.S.A.</option>
+              <option value="mercure_liquide">Mercure liquide / thermomètre brisé ⚠️</option>
+            </optgroup>
+            <optgroup label="🏙️ Collectivité">
+              <option value="eau_javel">Eau de Javel / hypochlorite</option>
+              <option value="produit_menager">Produit ménager dangereux N.S.A.</option>
+              <option value="piles_alcalines">Piles alcalines / Zn-C usagées</option>
+              <option value="neon_tube">Néons / tubes fluorescents (mercure)</option>
+              <option value="medicaments">Médicaments non utilisés</option>
+              <option value="dechets_menagers_dd">DM dangereux mixtes</option>
+              <option value="pesticide_liquide">Pesticide / herbicide liquide</option>
+              <option value="pesticide_solide">Pesticide / herbicide solide</option>
+              <option value="dechets_asbeste">Déchets amiantés (→ voir onglet Identification)</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="fg" style="min-width:100px;max-width:130px">
+          <label>Quantité (kg ou L)</label>
+          <input type="number" id="new-comp-qte" placeholder="ex: 10" min="0" step="0.1">
+        </div>
+        <div class="fg" style="min-width:80px;max-width:110px">
+          <label>État physique</label>
+          <select id="new-comp-etat">
+            <option value="liquide">Liquide</option>
+            <option value="solide">Solide</option>
+            <option value="pateux">Pâteux</option>
+            <option value="gaz">Gaz/aérosol</option>
+          </select>
+        </div>
+        <button class="big-btn" style="width:auto;padding:9px 18px;margin:0;flex:0 0 auto" onclick="addComposant()">➕ Ajouter</button>
+      </div>
+
+      <div id="incompatibilite-alert" style="display:none"></div>
+
+      <div class="section-lbl">Résultat : classification du mélange</div>
+      <div id="melange-result"><div class="result-info"><div class="rb-title">ℹ️ Ajoutez au moins un composant pour obtenir la classification.</div></div></div>
+
+      <div id="melange-nsa" style="display:none">
+        <div class="section-lbl">Désignation officielle N.S.A. proposée</div>
+        <div id="nsa-block" style="background:#f8faff;border:1.5px solid #b5d4f4;border-radius:8px;padding:14px;font-size:13px;line-height:1.9"></div>
+        <div class="section-lbl">Code déchet européen applicable</div>
+        <div id="code-dechet-block" style="background:#f0faf0;border:1.5px solid #7ac97a;border-radius:8px;padding:14px;font-size:13px;line-height:1.9"></div>
+        <button class="big-btn" onclick="transfererVersPrincipal()" style="margin-top:12px">↪️ Transférer ce résultat dans l'onglet Identification →</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📏 Règles ADR de classification des mélanges (2.1.3)</div>
+      <div style="font-size:12px;line-height:1.9;color:#334">
+        <b>Principe de prépondérance :</b> un mélange est classé selon le composant présentant le danger le plus élevé.<br>
+        <b>Hiérarchie des dangers ADR (2.1.3.5.3) :</b><br>
+        <span style="display:inline-block;background:#ffeaea;border-radius:4px;padding:2px 10px;margin:2px">1. Cl.1 Explosifs</span>
+        <span style="display:inline-block;background:#fff3e0;border-radius:4px;padding:2px 10px;margin:2px">2. Cl.2 Gaz</span>
+        <span style="display:inline-block;background:#fff3e0;border-radius:4px;padding:2px 10px;margin:2px">3. Cl.3 Liquides infl.</span>
+        <span style="display:inline-block;background:#fff3e0;border-radius:4px;padding:2px 10px;margin:2px">4. Cl.4.1/4.2/4.3</span>
+        <span style="display:inline-block;background:#fff3e0;border-radius:4px;padding:2px 10px;margin:2px">5. Cl.5.1 Comburants</span>
+        <span style="display:inline-block;background:#e8f5e9;border-radius:4px;padding:2px 10px;margin:2px">6. Cl.6.1 Toxiques</span>
+        <span style="display:inline-block;background:#e8f5e9;border-radius:4px;padding:2px 10px;margin:2px">7. Cl.6.2 Infectieux</span>
+        <span style="display:inline-block;background:#fff8e1;border-radius:4px;padding:2px 10px;margin:2px">8. Cl.8 Corrosifs</span>
+        <span style="display:inline-block;background:#f4f4f4;border-radius:4px;padding:2px 10px;margin:2px">9. Cl.9 Divers</span><br>
+        <b>GE du mélange :</b> GE le plus contraignant des composants présents (I > II > III).<br>
+        <b>N.S.A. :</b> si aucune désignation précise n'existe pour le mélange, on utilise une désignation N.S.A. (non spécifié ailleurs) avec mention des composants dangereux principaux (règle 274).<br>
+        <b>Incompatibilités absolues :</b> acides + bases, oxydants + inflammables, chlore + ammoniaque → JAMAIS dans le même colis.
+      </div>
+    </div>
+  </div>
+
+  <!-- CONDITIONNEMENT -->
+  <div id="tab-conditionnement" class="hidden">
+    <div class="card">
+      <div class="card-title">📦 Conditionnement réglementaire</div>
+      <div class="section-lbl">Type de contenant</div>
+      <div class="field-row">
+        <div class="fg">
+          <label>Type d'emballage</label>
+          <select id="type-emb" onchange="onEmbChange(this.value)">
+            <option value="">— sélectionner —</option>
+            <option value="colis">Colis / emballage unitaire</option>
+            <option value="GRV">GRV (IBC)</option>
+            <option value="citerne">Citerne</option>
+            <option value="vrac">Vrac</option>
+            <option value="gaz">Récipient à pression (gaz)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Code emballage ONU</label>
+          <input type="text" id="code-emb" placeholder="ex: 4G, 1A2, 31A...">
+        </div>
+        <div class="fg">
+          <label>Marque homologation ONU visible ?</label>
+          <select id="marque-onu">
+            <option value="oui">Oui ✓</option>
+            <option value="non">Non ✗</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="fg">
+          <label>Régime appliqué</label>
+          <select id="regime-lq" onchange="onRegimeChange(this.value)">
+            <option value="plein">Régime complet ADR</option>
+            <option value="LQ">Quantités limitées (LQ) — chap. 3.4</option>
+            <option value="EQ">Quantités exceptées (EQ) — chap. 3.5</option>
+          </select>
+        </div>
+      </div>
+      <div id="regime-info" class="result-info">
+        <div class="rb-title">ℹ️ Régime complet — toutes les dispositions ADR s'appliquent.</div>
+        <div class="rb-body">Conditionnement homologué ONU requis, documents complets, signalisation véhicule obligatoire.</div>
+      </div>
+      <div class="section-lbl">Critères de conformité emballage</div>
+      <div id="emb-checks"><div class="result-info"><div class="rb-title">Sélectionnez un type de contenant.</div></div></div>
+    </div>
+  </div>
+
+  <!-- ETIQUETAGE -->
+  <div id="tab-etiquetage" class="hidden">
+    <div class="card">
+      <div class="card-title">🏷️ Étiquetage des colis</div>
+      <div id="etiquetage-content">
+        <div class="result-info"><div class="rb-title">ℹ️ Renseignez un numéro ONU dans l'onglet Identification.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSPORT -->
+  <div id="tab-transport" class="hidden">
+    <div class="card">
+      <div class="card-title">🚛 Type de véhicule & équipements</div>
+      <div class="section-lbl">Type de véhicule ADR</div>
+      <div class="transport-grid">
+        <div class="tc" onclick="selectTransport('EX')" id="tc-EX"><div class="tc-icon">💥</div><div class="tc-name">EX/II - EX/III</div><div class="tc-sub">Explosifs</div></div>
+        <div class="tc" onclick="selectTransport('FL')" id="tc-FL"><div class="tc-icon">🔥</div><div class="tc-name">FL</div><div class="tc-sub">Liquides infl. citerne</div></div>
+        <div class="tc" onclick="selectTransport('AT')" id="tc-AT"><div class="tc-icon">🚛</div><div class="tc-name">AT</div><div class="tc-sub">Autres citernes/vrac</div></div>
+        <div class="tc" onclick="selectTransport('colis')" id="tc-colis"><div class="tc-icon">📦</div><div class="tc-name">Véhicule colis</div><div class="tc-sub">Non citerne</div></div>
+      </div>
+      <div class="section-lbl">Équipements obligatoires à bord</div>
+      <div id="equipements-list"><div class="result-info"><div class="rb-title">Sélectionnez un type de véhicule.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🟧 Placardage & signalisation</div>
+      <div id="placardage-info"><div class="result-info"><div class="rb-title">Sélectionnez un type de véhicule.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🛣️ Restrictions de circulation</div>
+      <div id="restrictions-info"><div class="result-info"><div class="rb-title">Sélectionnez un type de véhicule.</div></div></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS -->
+  <div id="tab-documents" class="hidden">
+    <div class="card">
+      <div class="card-title">📄 Documents obligatoires & traçabilité</div>
+      <div class="section-lbl">Documents à bord (ADR 8.1.2)</div>
+      <div id="docs-list"></div>
+      <div class="section-lbl">Contenu du document de transport (5.4.1.1)</div>
+      <div id="doc-transport-content"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">♻️ Filière déchets dangereux</div>
+      <div class="field-row">
+        <div class="fg"><label>Code déchet européen (ex: 13 02 06*)</label><input type="text" id="code-dechet" placeholder="ex: 13 02 06*"></div>
+        <div class="fg"><label>Filière / destination</label><input type="text" id="filiere" placeholder="ex: Centre agréé D8 / R9"></div>
+      </div>
+      <div class="field-row">
+        <div class="fg"><label>N° BSD</label><input type="text" id="bsd-num" placeholder="ex: BSD-FR-..."></div>
+        <div class="fg"><label>Collecteur agréé (récépissé préfectoral) ?</label>
+          <select id="agree" onchange="renderFiliereChecks()">
+            <option value="oui">Oui — récépissé valide</option>
+            <option value="non">Non / à vérifier</option>
+          </select>
+        </div>
+      </div>
+      <div id="filiere-checks"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Consignes de sécurité écrites (Fiche W)</div>
+      <div class="result-warn">
+        <div class="rb-title">⚠️ Fiche W obligatoire en cabine (ADR 5.4.3 / 8.1.2.1)</div>
+        <div class="rb-body">
+          · Disponibles pour chaque matière transportée<br>
+          · Rédigées dans la langue du conducteur ET des pays traversés<br>
+          · Conformes au modèle ADR Annexe 5.4.3.4 (4 sections : nature du danger, EPI, actions conducteur, actions secours)<br>
+          · Une fiche peut couvrir plusieurs matières d'une même classe
+        </div>
+      </div>
+      <button class="big-btn" onclick="genFicheW()">📝 Générer modèle fiche W via Claude IA →</button>
+    </div>
+  </div>
+
+  <!-- BILAN -->
+  <div id="tab-bilan" class="hidden">
+    <div class="card">
+      <div class="card-title">✅ Bilan de conformité CSTMD</div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-val" id="stat-ok" style="color:#2e7d32">—</div><div class="stat-lbl">Conformes</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-warn" style="color:#f57f17">—</div><div class="stat-lbl">À vérifier</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-ko" style="color:#c62828">—</div><div class="stat-lbl">Non conformes</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div style="font-size:12px;color:#889;margin-top:6px" id="progress-label">0% de conformité estimée</div>
+      <div class="section-lbl" style="margin-top:16px">Détail par catégorie</div>
+      <div id="bilan-checklist"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button class="big-btn" onclick="genRapport()" style="flex:1">📊 Générer rapport CSTMD complet via Claude IA →</button>
+        <button class="big-btn sec" onclick="resetAll()" style="flex:0 0 auto;padding:12px 18px">🔄 Réinitialiser</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RAPPORT -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">📊 Rapport CSTMD <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('open')">✕</button></div>
+    <div id="modal-content" class="rapport-content">Génération en cours<span class="loading-dots"></span></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BASE DE DONNÉES UN — ADR 2025
+// Secteurs: garages/auto, industrie/chimie, bâtiment/peintures, collectivités
+// Format: UN: {name, classe, ge, kemler, tunnel, etiq, lq, eq, pm, ds, secteur}
+// ============================================================
+const UN_DB = {
+  // ---- GARAGES / AUTOMOBILE ----
+  "1202": {name:"GAZOLE ou GASOIL ou HUILE DE CHAUFFAGE, légère", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"garage"},
+  "1203": {name:"ESSENCE ou CARBURANT POUR MOTEURS", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "1268": {name:"DISTILLATS DE PÉTROLE, N.S.A. ou PRODUITS PÉTROLIERS, N.S.A.", classe:"3", ge:"I/II/III", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "1223": {name:"KÉROSÈNE", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"garage"},
+  "1263": {name:"PEINTURE (y compris peinture, laque, émail, vernis, shellac, gomme-laque, enduit, cire liquide, mordant pour métal)", classe:"3", ge:"I/II/III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "1999": {name:"GOUDRONS DE ROUTE, chauds", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"garage"},
+  "1230": {name:"MÉTHANOL", classe:"3", ge:"II", kemler:"336", tunnel:"C/D", etiq:"3+6.1", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "2029": {name:"HYDRAZINE ANHYDRE", classe:"8", ge:"I", kemler:"886", tunnel:"C", etiq:"8+6.1+3", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"industrie"},
+  "1993": {name:"LIQUIDE INFLAMMABLE, N.S.A.", classe:"3", ge:"I/II/III", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "3295": {name:"HYDROCARBURES, LIQUIDES, N.S.A.", classe:"3", ge:"I/II/III", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "1废": {name:"", classe:"", ge:"", kemler:"", tunnel:"", etiq:"", lq:"", eq:"", pm:"", ds:"", secteur:""},
+  "1731": {name:"PENTOXYDE D'ANTIMOINE LIQUIDE", classe:"8", ge:"II", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"industrie"},
+  "2761": {name:"PESTICIDE ORGANOCHLORÉ SOLIDE, TOXIQUE", classe:"6.1", ge:"II", kemler:"60", tunnel:"E", etiq:"6.1", lq:"500g", eq:"E4", pm:"non", ds:"", secteur:"industrie"},
+  // ---- HUILES & LUBRIFIANTS ----
+  "3077": {name:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, SOLIDE, N.S.A.", classe:"9", ge:"III", kemler:"90", tunnel:"—", etiq:"9", lq:"5kg", eq:"E1", pm:"oui", ds:"274 335 375", secteur:"garage"},
+  "3082": {name:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, LIQUIDE, N.S.A.", classe:"9", ge:"III", kemler:"90", tunnel:"—", etiq:"9", lq:"5L", eq:"E1", pm:"oui", ds:"274 335 375", secteur:"garage"},
+  "3167": {name:"GAZ DE PÉTROLE LIQUÉFIÉ (GPL)", classe:"2", ge:"—", kemler:"23", tunnel:"B/D", etiq:"2.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"garage"},
+  // ---- INDUSTRIE / CHIMIE ----
+  "1789": {name:"ACIDE CHLORHYDRIQUE EN SOLUTION", classe:"8", ge:"II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"industrie"},
+  "1830": {name:"ACIDE SULFURIQUE contenant plus de 51% d'acide", classe:"8", ge:"II", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"industrie"},
+  "2031": {name:"ACIDE NITRIQUE, autre que rouge fumant, contenant plus de 70% d'acide", classe:"8", ge:"I", kemler:"885", tunnel:"E", etiq:"8+5.1+6.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"industrie"},
+  "1760": {name:"LIQUIDE CORROSIF, N.S.A.", classe:"8", ge:"I/II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "2922": {name:"LIQUIDE CORROSIF, TOXIQUE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"86", tunnel:"E", etiq:"8+6.1", lq:"0", eq:"E0", pm:"non", ds:"274", secteur:"industrie"},
+  "1824": {name:"SOLUTION DE SOUDE CAUSTIQUE", classe:"8", ge:"II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"industrie"},
+  "1823": {name:"SOUDE CAUSTIQUE EN PASTILLES", classe:"8", ge:"II", kemler:"80", tunnel:"E", etiq:"8", lq:"1kg", eq:"E2", pm:"non", ds:"", secteur:"industrie"},
+  "1719": {name:"LIQUIDE ALCALIN CAUSTIQUE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "2794": {name:"ACCUMULATEURS ÉLECTRIQUES À L'ACIDE", classe:"8", ge:"—", kemler:"80", tunnel:"—", etiq:"8", lq:"0", eq:"E0", pm:"non", ds:"238", secteur:"garage"},
+  "3090": {name:"PILES AU LITHIUM MÉTAL (y compris piles alliage de lithium)", classe:"9", ge:"—", kemler:"90", tunnel:"—", etiq:"9A", lq:"0", eq:"E0", pm:"non", ds:"188 230 310 348 360 376 377 384 387 388", secteur:"garage"},
+  "3480": {name:"BATTERIES AU LITHIUM-ION", classe:"9", ge:"—", kemler:"90", tunnel:"—", etiq:"9A", lq:"0", eq:"E0", pm:"non", ds:"188 230 310 348 360 376 377 384 387 388", secteur:"garage"},
+  "3481": {name:"BATTERIES AU LITHIUM-ION CONTENUES DANS UN ÉQUIPEMENT", classe:"9", ge:"—", kemler:"90", tunnel:"—", etiq:"9A", lq:"0", eq:"E0", pm:"non", ds:"188 230 310 348 360 376 377 384 387 388", secteur:"garage"},
+  "2800": {name:"ACCUMULATEURS ÉLECTRIQUES ÉTANCHES", classe:"8", ge:"—", kemler:"80", tunnel:"—", etiq:"8", lq:"0", eq:"E0", pm:"non", ds:"238", secteur:"garage"},
+  // ---- SOLVANTS / PEINTURES / BÂTIMENT ----
+  "1170": {name:"ÉTHANOL EN SOLUTION (alcool éthylique en solution)", classe:"3", ge:"II/III", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1173": {name:"ACÉTATE D'ÉTHYLE", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1155": {name:"ÉTHER DIÉTHYLIQUE (oxyde d'éthyle)", classe:"3", ge:"I", kemler:"33", tunnel:"D/E", etiq:"3", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"batiment"},
+  "1090": {name:"ACÉTONE", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1120": {name:"BUTANOLS", classe:"3", ge:"I/II/III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1262": {name:"OCTANE", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1294": {name:"TOLUÈNE", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1307": {name:"XYLÈNES", classe:"3", ge:"II/III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  "1086": {name:"CHLORURE DE VINYLE STABILISÉ", classe:"2", ge:"—", kemler:"239", tunnel:"D/E", etiq:"2.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"batiment"},
+  "2922": {name:"LIQUIDE CORROSIF TOXIQUE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"86", tunnel:"E", etiq:"8+6.1", lq:"0", eq:"E0", pm:"non", ds:"274", secteur:"batiment"},
+  "1805": {name:"ACIDE PHOSPHORIQUE EN SOLUTION", classe:"8", ge:"III", kemler:"80", tunnel:"E", etiq:"8", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "2796": {name:"ACIDE SULFURIQUE contenant au plus 51% d'acide ou ELECTROLYTE ACIDE POUR BATTERIES", classe:"8", ge:"II", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"garage"},
+  "1130": {name:"ESSENCE DE TÉRÉBENTHINE", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "1300": {name:"ESSENCE MINÉRALE DE SUBSTITUTION", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  // ---- COLLECTIVITÉS ----
+  "1791": {name:"HYPOCHLORITE EN SOLUTION", classe:"8", ge:"II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"collectivite"},
+  "2014": {name:"PEROXYDE D'HYDROGÈNE EN SOLUTION aqueuse, de 20% à 60%", classe:"5.1", ge:"II", kemler:"58", tunnel:"D/E", etiq:"5.1+8", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"collectivite"},
+  "2015": {name:"PEROXYDE D'HYDROGÈNE EN SOLUTION aqueuse, stabilisé, contenant plus de 60%", classe:"5.1", ge:"I", kemler:"558", tunnel:"D/E", etiq:"5.1+8", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  "1072": {name:"OXYGÈNE COMPRIMÉ", classe:"2", ge:"—", kemler:"25", tunnel:"B/E", etiq:"2.2+5.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  "1075": {name:"GAZ DE PÉTROLE LIQUÉFIÉS", classe:"2", ge:"—", kemler:"23", tunnel:"B/D", etiq:"2.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  "1017": {name:"CHLORE", classe:"2", ge:"—", kemler:"265", tunnel:"C/D", etiq:"2.3+5.1+8", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  "1479": {name:"MATIÈRE COMBURANTE SOLIDE, N.S.A.", classe:"5.1", ge:"I/II/III", kemler:"50", tunnel:"D/E", etiq:"5.1", lq:"500g", eq:"E2", pm:"non", ds:"274", secteur:"collectivite"},
+  "1942": {name:"NITRATE D'AMMONIUM", classe:"5.1", ge:"III", kemler:"50", tunnel:"E", etiq:"5.1", lq:"1kg", eq:"E2", pm:"non", ds:"152", secteur:"collectivite"},
+  "2672": {name:"AMMONIAQUE EN SOLUTION aqueuse entre 10% et 35%", classe:"8", ge:"III", kemler:"80", tunnel:"E", etiq:"8", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"collectivite"},
+  "1005": {name:"AMMONIAC ANHYDRE", classe:"2", ge:"—", kemler:"268", tunnel:"C/D", etiq:"2.3+8", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  "2031": {name:"ACIDE NITRIQUE, autre que rouge fumant, >70%", classe:"8", ge:"I", kemler:"885", tunnel:"E", etiq:"8+5.1+6.1", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"collectivite"},
+  // ---- DÉCHETS SPÉCIFIQUES ----
+  "1325": {name:"MATIÈRE ORGANIQUE INFLAMMABLE, N.S.A.", classe:"4.1", ge:"II/III", kemler:"40", tunnel:"E", etiq:"4.1", lq:"500g", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "3175": {name:"SOLIDES CONTENANT DU LIQUIDE INFLAMMABLE, N.S.A.", classe:"4.1", ge:"II/III", kemler:"40", tunnel:"E", etiq:"4.1", lq:"500g", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "2315": {name:"BIPHÉNYLES POLYCHLORÉS LIQUIDES (PCB)", classe:"9", ge:"II", kemler:"90", tunnel:"—", etiq:"9", lq:"0", eq:"E0", pm:"oui", ds:"", secteur:"industrie"},
+  "3432": {name:"BIPHÉNYLES POLYCHLORÉS SOLIDES (PCB)", classe:"9", ge:"II", kemler:"90", tunnel:"—", etiq:"9", lq:"0", eq:"E0", pm:"oui", ds:"", secteur:"industrie"},
+  "2761": {name:"PESTICIDE ORGANOCHLORÉ SOLIDE, TOXIQUE", classe:"6.1", ge:"II", kemler:"60", tunnel:"E", etiq:"6.1", lq:"500g", eq:"E4", pm:"non", ds:"", secteur:"industrie"},
+  "2902": {name:"PESTICIDE LIQUIDE, TOXIQUE, N.S.A.", classe:"6.1", ge:"I/II/III", kemler:"60", tunnel:"E", etiq:"6.1", lq:"0", eq:"E5", pm:"non", ds:"274 61", secteur:"industrie"},
+  "1999": {name:"GOUDRONS DE ROUTE, CHAUDS", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "2552": {name:"HEXAFLUOROACÉTONE HYDRATÉ LIQUIDE", classe:"6.1", ge:"II", kemler:"60", tunnel:"E", etiq:"6.1", lq:"0", eq:"E4", pm:"non", ds:"", secteur:"industrie"},
+  "3077": {name:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, SOLIDE, N.S.A.", classe:"9", ge:"III", kemler:"90", tunnel:"—", etiq:"9", lq:"5kg", eq:"E1", pm:"oui", ds:"274 335", secteur:"collectivite"},
+  "3082": {name:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, LIQUIDE, N.S.A.", classe:"9", ge:"III", kemler:"90", tunnel:"—", etiq:"9", lq:"5L", eq:"E1", pm:"oui", ds:"274 335", secteur:"collectivite"},
+  "1270": {name:"HUILE DE PÉTROLE", classe:"3", ge:"III", kemler:"30", tunnel:"D/E", etiq:"3", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"garage"},
+  "3295": {name:"HYDROCARBURES LIQUIDES, N.S.A.", classe:"3", ge:"I/II/III", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"garage"},
+  "1710": {name:"TRICHLORÉTHYLÈNE", classe:"6.1", ge:"III", kemler:"60", tunnel:"E", etiq:"6.1", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "1897": {name:"TÉTRACHLOROÉTHYLÈNE", classe:"6.1", ge:"III", kemler:"60", tunnel:"E", etiq:"6.1", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "1888": {name:"CHLOROFORME", classe:"6.1", ge:"III", kemler:"60", tunnel:"E", etiq:"6.1", lq:"5L", eq:"E1", pm:"non", ds:"", secteur:"batiment"},
+  "2801": {name:"MATIÈRE CORROSIVE LIQUIDE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "3264": {name:"LIQUIDE INORGANIQUE CORROSIF, ACIDE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "3266": {name:"LIQUIDE INORGANIQUE CORROSIF, BASIQUE, N.S.A.", classe:"8", ge:"I/II/III", kemler:"80", tunnel:"E", etiq:"8", lq:"1L", eq:"E2", pm:"non", ds:"274", secteur:"industrie"},
+  "1218": {name:"ISOPRÈNE STABILISÉ", classe:"3", ge:"I", kemler:"339", tunnel:"D/E", etiq:"3", lq:"0", eq:"E0", pm:"non", ds:"", secteur:"industrie"},
+  "1090": {name:"ACÉTONE", classe:"3", ge:"II", kemler:"33", tunnel:"D/E", etiq:"3", lq:"1L", eq:"E2", pm:"non", ds:"", secteur:"batiment"},
+  // ---- AMIANTE ----
+  "2212": {name:"AMIANTE AMPHIBOLE (actinolite, amosite, anthophyllite, crocidolite, trémolite)", classe:"9", ge:"—", kemler:"90", tunnel:"—", etiq:"9", lq:"0", eq:"E0", pm:"non", ds:"168", secteur:"collectivite", amiante:true, amianteType:"amphibole"},
+  "2590": {name:"AMIANTE CHRYSOTILE (amiante blanc)", classe:"9", ge:"—", kemler:"90", tunnel:"—", etiq:"9", lq:"0", eq:"E0", pm:"non", ds:"168", secteur:"collectivite", amiante:true, amianteType:"chrysotile"},
+};
+
+let state = {tab:'identification', transport_type:null, currentUN:null};
+
+// ---- AUTOCOMPLETE ----
+function onUNSearch(val) {
+  const list = document.getElementById('ac-list');
+  val = val.trim();
+  if (val.length < 2) { list.classList.add('hidden'); return; }
+  const matches = Object.entries(UN_DB).filter(([k,v]) => k.startsWith(val) && v.name).slice(0, 10);
+  if (!matches.length) { list.classList.add('hidden'); return; }
+  list.innerHTML = matches.map(([k,v]) =>
+    `<div class="ac-item" onclick="selectUN('${k}')">
+      <span class="ac-un">${k}</span>
+      <span class="ac-name">${v.name.substring(0,55)}${v.name.length>55?'...':''}</span>
+      <span class="ac-class">Cl.${v.classe}</span>
+    </div>`
+  ).join('');
+  list.classList.remove('hidden');
+}
+
+function selectUN(un) {
+  document.getElementById('un-number').value = un;
+  document.getElementById('ac-list').classList.add('hidden');
+  fillFromUN(un);
+}
+
+function fillFromUN(un) {
+  const data = UN_DB[un];
+  if (!data || !data.name) {
+    state.currentUN = null;
+    return;
+  }
+  state.currentUN = {un, ...data};
+  const fields = {
+    'dot-name': data.name,
+    'classe': data.classe,
+    'ge': data.ge,
+    'kemler': data.kemler,
+    'tunnel': data.tunnel,
+    'etiq-auto': data.etiq,
+    'pol-marin': data.pm === 'oui' ? 'OUI ⚠️' : 'Non',
+    'lq-code': data.lq || '—',
+    'eq-code': data.eq || '—',
+    'disp-spec': data.ds || '—',
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = val; el.classList.add('autofilled'); }
+  });
+  // Bloc spécial amiante
+  if (data.amiante) {
+    renderAmianteAlert(data);
+  } else {
+    const prev = document.getElementById('amiante-alert');
+    if (prev) prev.remove();
+  }
+  checkSeuils();
+}
+
+function renderAmianteAlert(data) {
+  const prev = document.getElementById('amiante-alert');
+  if (prev) prev.remove();
+  const div = document.createElement('div');
+  div.id = 'amiante-alert';
+  div.style.cssText = 'margin-top:14px';
+  div.innerHTML = `
+    <div style="background:#fff8e1;border:2px solid #f9a825;border-radius:10px;padding:16px;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:700;color:#e65100;margin-bottom:10px">⚠️ AMIANTE — Réglementation spécifique ADR + Code de l'environnement</div>
+
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #ffe082">
+        <div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px">📋 DISPOSITION SPÉCIALE 168 — ADR chapitre 3.3</div>
+        <div style="font-size:12px;line-height:1.9;color:#333">
+          L'amiante <b>est exempté des dispositions ADR</b> si les deux conditions suivantes sont simultanément réunies :<br>
+          <span style="display:inline-block;background:#e8f5e9;border-radius:4px;padding:2px 8px;margin:3px 0;border-left:3px solid #4caf50">✅ Condition 1 : L'amiante est emballé de façon à ne pas permettre de libération de fibres dans l'atmosphère pendant le transport</span><br>
+          <span style="display:inline-block;background:#e8f5e9;border-radius:4px;padding:2px 8px;margin:3px 0;border-left:3px solid #4caf50">✅ Condition 2 : Les emballages sont solides, étanches et en bon état</span><br>
+          <span style="display:inline-block;background:#fff3e0;border-radius:4px;padding:2px 8px;margin:3px 0;border-left:3px solid #ff9800">⚠️ Si ces conditions sont remplies → pas de marquage UN, pas de placard, pas de certificat ADR conducteur requis</span><br>
+          <span style="display:inline-block;background:#ffeaea;border-radius:4px;padding:2px 8px;margin:3px 0;border-left:3px solid #f44336">❌ Si une condition n'est pas remplie → régime complet ADR classe 9 s'applique : étiquette 9, panneau orange, document de transport</span>
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #ffe082">
+        <div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px">📦 CONDITIONNEMENT RÉGLEMENTAIRE AMIANTE (déchets)</div>
+        <div style="font-size:12px;line-height:1.9;color:#333">
+          <b>Déchets amiante-ciment (non friable) :</b><br>
+          · Sacs ou big-bags double épaisseur résistants à la déchirure, étanches à l'air<br>
+          · Sacs fermés hermétiquement (soudure ou double nœud serré)<br>
+          · Marquage sur le sac : pictogramme amiante réglementaire (arrêté du 07/02/2012)<br>
+          · Mise en benne fermée ou filmée — bâchage obligatoire<br><br>
+          <b>Déchets amiante friable (flocages, calorifuges) :</b><br>
+          · Emballage primaire : sac plastique hermétique mis en double sac<br>
+          · Emballage secondaire : caisse étanche ou conteneur rigide fermé<br>
+          · Conditionnement réalisé sous confinement par entreprise certifiée<br>
+          · Réf. : Arrêté du 23/02/2012 & décret 96-1133 (abrogé, repris dans Code du travail R4412-94 et suivants)
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #ffe082">
+        <div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px">🚛 TRANSPORT & VÉHICULE</div>
+        <div style="font-size:12px;line-height:1.9;color:#333">
+          · Véhicule bâché ou caisse fermée — aucune fibre ne doit pouvoir s'échapper<br>
+          · Nettoyage du véhicule après chaque transport (par entreprise agréée si contamination)<br>
+          · <b>Interdiction de mélanger amiante friable et non friable</b> dans le même chargement<br>
+          · <b>Interdiction de mélanger amiante avec d'autres déchets</b><br>
+          · Conducteur informé des risques — port de l'EPI si manipulation requise<br>
+          · EPI spécifique : masque FFP3, combinaison jetable type 5, gants nitrile<br>
+          · En cas de déversement : alerte immédiate — ne pas balayer à sec — zone balisée<br>
+          · Réf. : Code du travail R4412-94 à R4412-148
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #ffe082">
+        <div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px">🏷️ MARQUAGE & ÉTIQUETAGE SPÉCIFIQUE AMIANTE</div>
+        <div style="font-size:12px;line-height:1.9;color:#333">
+          <b>Pictogramme amiante obligatoire</b> sur chaque colis/sac (arrêté du 07/02/2012) :<br>
+          · Fond blanc, texte noir, triangle jaune avec point d'exclamation<br>
+          · Mention : "AMIANTE — Danger — Fibres cancérogènes — Protéger les voies respiratoires"<br>
+          · Taille minimale : 5×2,5 cm sur les sacs, 10×5 cm sur les GRV et conteneurs<br><br>
+          <b>Si régime ADR complet s'applique :</b><br>
+          · Étiquette de danger classe 9 (losange 100×100 mm min.)<br>
+          · Marquage UN 2212 ou UN 2590 sur fond orange<br>
+          · Réf. : ADR 5.2.1 & 5.2.2
+        </div>
+      </div>
+
+      <div style="background:#fff;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #ffe082">
+        <div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px">♻️ FILIÈRE & TRAÇABILITÉ DÉCHETS AMIANTE</div>
+        <div style="font-size:12px;line-height:1.9;color:#333">
+          <b>BSD obligatoire</b> pour tout transport de déchets amiante (code déchet 17 06 01* ou 17 06 05*)<br>
+          · <b>17 06 01* :</b> matériaux d'isolation contenant de l'amiante (DANGER — astérisque)<br>
+          · <b>17 06 05* :</b> matériaux de construction contenant de l'amiante (DANGER)<br>
+          · <b>17 06 03* :</b> autres matériaux d'isolation contenant de l'amiante<br><br>
+          <b>Filières d'élimination autorisées :</b><br>
+          · Amiante friable → INSTALLATION DE STOCKAGE DE DÉCHETS DANGEREUX (ISDD) — D5 uniquement<br>
+          · Amiante non friable (lié) → ISDND (Installation de Stockage Déchets Non Dangereux) si autorisée, ou ISDD<br>
+          · Aucune valorisation ni incinération autorisée pour l'amiante<br><br>
+          <b>Transporteur :</b> récépissé préfectoral catégorie déchets dangereux obligatoire<br>
+          <b>Producteur de déchets :</b> diagnostic amiante avant travaux (décret 2011-629)<br>
+          <b>Entreprise de dépose :</b> certification SS3 (sous-section 3) ou SS4 (sous-section 4) selon friabilité<br>
+          <b>Conservation des documents :</b> 5 ans minimum (CAP amiante, BSD, rapports)
+        </div>
+      </div>
+
+      <div style="background:#ffeaea;border-radius:8px;padding:12px;border:1px solid #ef9a9a">
+        <div style="font-size:12px;font-weight:700;color:#c62828;margin-bottom:6px">🚨 POINTS DE VIGILANCE CSTMD — AMIANTE</div>
+        <div style="font-size:12px;line-height:1.9;color:#7a1a1a">
+          1. Vérifier la certification SS3/SS4 de l'entreprise de dépose AVANT le transport<br>
+          2. Contrôler l'intégrité visuelle de chaque emballage avant chargement<br>
+          3. S'assurer que le BSD mentionne le code déchet correct (17 06 01* ou 17 06 05*)<br>
+          4. Vérifier que la ISDD destinataire est bien autorisée à recevoir ce type d'amiante<br>
+          5. Ne jamais mélanger amiante friable et non friable — filières différentes<br>
+          6. En cas de doute sur la friabilité → traiter comme amiante friable (principe de précaution)<br>
+          7. Le conducteur doit avoir reçu une information sur les risques amiante (formation SS4 ou équivalent)<br>
+          8. Garder une copie du BSD signé par le destinataire — preuve de traçabilité complète<br>
+          9. Le site de destination doit remettre le volet destinataire du BSD dans les 30 jours
+        </div>
+      </div>
+    </div>
+  `;
+  // Insert after the seuil-result block
+  const seuilEl = document.getElementById('seuil-result');
+  seuilEl.parentNode.insertBefore(div, seuilEl.nextSibling);
+}
+
+function checkSeuils() {
+  const classe = document.getElementById('classe').value;
+  const ge = document.getElementById('ge').value;
+  const qte = parseFloat(document.getElementById('quantite').value) || 0;
+  const el = document.getElementById('seuil-result');
+  if (!classe) return;
+
+  const GE_EX = {'I':20,'II':333,'III':1000,'—':9999};
+  const GE_VT = {'I':20,'II':333,'III':1000};
+
+  if (classe === '1') {
+    el.className='result-warn'; el.innerHTML='<div class="rb-title">💥 Classe 1 — Régime spécial</div><div class="rb-body">Agrément préalable obligatoire, escorte possible, notification autorités. Chapitre 7.5.2 & 8.4 ADR.</div>'; return;
+  }
+  if (classe === '7') {
+    el.className='result-warn'; el.innerHTML='<div class="rb-title">☢️ Classe 7 — Radioactif</div><div class="rb-body">Règlements AIEA (TS-R-1). Indices de transport à calculer. Approbation autorité compétente possible.</div>'; return;
+  }
+  // Cas spécial amiante — DS 168
+  if (state.currentUN && state.currentUN.amiante) {
+    el.className='result-warn';
+    el.innerHTML=`<div class="rb-title">☣️ AMIANTE — Disposition Spéciale 168 ADR</div><div class="rb-body">
+      <b>Exemption ADR possible</b> si emballages étanches et solides (DS 168).<br>
+      Si conditions non remplies : étiquette 9, panneau orange UN ${state.currentUN.un}, document de transport obligatoire.<br>
+      <b>BSD obligatoire dans tous les cas</b> — codes déchets 17 06 01* / 17 06 05* / 17 06 03*<br>
+      Filière : ISDD uniquement pour amiante friable. Voir détail ci-dessous.</div>`;
+    return;
+  }
+  if (!qte) { el.className='result-info'; el.innerHTML='<div class="rb-title">ℹ️ Saisissez la quantité pour calculer les seuils ADR.</div>'; return; }
+
+  const geKey = ge.split('/')[0];
+  const seuilEx = GE_EX[geKey] || 0;
+  const seuilVT = GE_VT[geKey] || 0;
+
+  if (seuilEx > 0 && qte <= seuilEx) {
+    el.className='result-ok'; el.innerHTML=`<div class="rb-title">✅ Quantité ≤ seuil exemption (${seuilEx} kg/L) — LQ applicable</div><div class="rb-body">Transport possible sous régime quantités limitées (chap. 3.4). Vérifiez le code LQ dans le tableau A col. 7a : ${document.getElementById('lq-code').value}.</div>`;
+  } else if (seuilVT > 0) {
+    const vt = qte / seuilVT;
+    if (vt < 1) {
+      el.className='result-ok'; el.innerHTML=`<div class="rb-title">✅ Valeur de transport : ${vt.toFixed(2)} &lt; 1 — seuil 1.1.3.6 non atteint</div><div class="rb-body">Exemptions partielles applicables si total MD &lt; 1000 points. Pas de signalisation obligatoire. Vérifier si d'autres MD sont chargées.</div>`;
+    } else {
+      el.className='result-ko'; el.innerHTML=`<div class="rb-title">❌ Seuil ADR 1.1.3.6 dépassé — Régime complet obligatoire</div><div class="rb-body">Valeur de transport : ${vt.toFixed(2)} ≥ 1. Homologation emballage, signalisation, certificat conducteur, documents complets, équipement bord.</div>`;
+    }
+  } else {
+    el.className='result-info'; el.innerHTML=`<div class="rb-title">ℹ️ Classe ${classe} — GE ${ge} — Vérifiez le tableau A ADR.</div>`;
+  }
+}
+
+// ---- TABS ----
+function showTab(tab) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  const labels=['identification','melanges','conditionnement','etiquetage','transport','documents','bilan'];
+  const btns=document.querySelectorAll('.nav-btn');
+  btns[labels.indexOf(tab)].classList.add('active');
+  state.tab=tab;
+  if(tab==='etiquetage') renderEtiquetage();
+  if(tab==='bilan') renderBilan();
+  if(tab==='documents') renderDocuments();
+  if(tab==='conditionnement') renderConditionnement();
+}
+
+// ================================================================
+// MODULE MÉLANGES — ADR 2025
+// Moteur de calcul UN conforme ADR 2.1.3 + tableau A chapitre 3.2
+// ================================================================
+
+const COMP_DB = {
+  // ---- GARAGE / AUTOMOBILE ----
+  huile_vidange:      {label:"Huile de vidange usagée",              classe:"3",   ge:"III", kemler:"30",  un:"1270", etiq:"3",    code_dechet:"13 02 05*", filiere:"ISDND/valorisateur huiles", risque:2, tags:["infl"]},
+  liq_refroid:        {label:"Liquide de refroidissement (glycol)",  classe:"9",   ge:"III", kemler:"90",  un:"3082", etiq:"9",    code_dechet:"16 01 14*", filiere:"ISDD ou ISDND case DD",     risque:1, tags:["env"]},
+  liq_frein:          {label:"Liquide de frein usagé",               classe:"3",   ge:"III", kemler:"30",  un:"1993", etiq:"3",    code_dechet:"16 01 13*", filiere:"ISDD",                      risque:2, tags:["infl"]},
+  essence_residus:    {label:"Résidus d'essence / carburant",        classe:"3",   ge:"II",  kemler:"33",  un:"1203", etiq:"3",    code_dechet:"13 07 01*", filiere:"ISDD / récupérateur carburant", risque:4, tags:["infl","vap"]},
+  gasoil_residus:     {label:"Résidus de gasoil",                    classe:"3",   ge:"III", kemler:"30",  un:"1202", etiq:"3",    code_dechet:"13 07 01*", filiere:"ISDD / récupérateur carburant", risque:2, tags:["infl"]},
+  batterie_acide:     {label:"Batterie acide plomb (électrolyte)",   classe:"8",   ge:"—",   kemler:"80",  un:"2794", etiq:"8",    code_dechet:"16 06 01*", filiere:"Fondeur plomb agréé",       risque:3, tags:["corr","acid"]},
+  batterie_lithium:   {label:"Batterie / accumulateur lithium-ion",  classe:"9",   ge:"—",   kemler:"90",  un:"3480", etiq:"9A",   code_dechet:"16 06 05*", filiere:"Collecteur SCRELEC/COREPILE", risque:3, tags:["lith"]},
+  batterie_nimh:      {label:"Batterie NiMH / NiCd usagée",          classe:"9",   ge:"—",   kemler:"90",  un:"3028", etiq:"9",    code_dechet:"16 06 04",  filiere:"Collecteur COREPILE",       risque:1, tags:[]},
+  antigel:            {label:"Antigel / liquide lave-glace",         classe:"3",   ge:"III", kemler:"30",  un:"1993", etiq:"3",    code_dechet:"16 01 14*", filiere:"ISDD",                      risque:2, tags:["infl"]},
+  huile_boite:        {label:"Huile de boîte de vitesses",           classe:"3",   ge:"III", kemler:"30",  un:"1270", etiq:"3",    code_dechet:"13 02 05*", filiere:"ISDND / valorisateur",      risque:1, tags:["infl"]},
+  huile_hydraulique:  {label:"Huile hydraulique",                    classe:"3",   ge:"III", kemler:"30",  un:"1270", etiq:"3",    code_dechet:"13 01 10*", filiere:"ISDND / valorisateur",      risque:1, tags:["infl"]},
+  carburant_contamine:{label:"Carburant contaminé (eau, gasoil+essence)", classe:"3",ge:"III",kemler:"30", un:"1993", etiq:"3",    code_dechet:"13 07 03*", filiere:"ISDD",                      risque:3, tags:["infl"]},
+  filtre_huile:       {label:"Filtres à huile souillés",             classe:"3",   ge:"III", kemler:"30",  un:"3175", etiq:"3",    code_dechet:"16 01 07*", filiere:"Filière métaux / ISDD",     risque:2, tags:["infl","sol"]},
+  chiffons_souilles:  {label:"Chiffons/absorbants souillés (huile)", classe:"4.2", ge:"III", kemler:"40",  un:"1364", etiq:"4.2",  code_dechet:"15 02 02*", filiere:"ISDD / incinération",       risque:3, tags:["auto_infl","sol"]},
+  // ---- BÂTIMENT / PEINTURES ----
+  peinture_solvant:   {label:"Peinture solvantée / laque / vernis",  classe:"3",   ge:"III", kemler:"30",  un:"1263", etiq:"3",    code_dechet:"08 01 11*", filiere:"ISDD / incinération",       risque:2, tags:["infl"]},
+  peinture_eau:       {label:"Peinture à l'eau (résidus secs)",       classe:"9",   ge:"III", kemler:"90",  un:"3077", etiq:"9",    code_dechet:"08 01 12",  filiere:"ISDND",                     risque:1, tags:["env","sol"]},
+  fonds_pateux:       {label:"Fonds pâteux / résidus peinture solvant",classe:"3", ge:"III", kemler:"30",  un:"3175", etiq:"3",    code_dechet:"08 01 11*", filiere:"ISDD / incinération",       risque:2, tags:["infl","sol","pat"]},
+  emballage_souille:  {label:"Emballage souillé solvant (pot, bidon vide non dégazé)", classe:"3",ge:"III",kemler:"30",un:"3175",etiq:"3",code_dechet:"15 01 10*",filiere:"ISDD",  risque:2, tags:["infl","sol"]},
+  emballage_souille_corr:{label:"Emballage souillé corrosif (pot de lessive, acide)",classe:"8",ge:"III",kemler:"80",un:"3509",etiq:"8",code_dechet:"15 01 10*",filiere:"ISDD",   risque:2, tags:["corr","sol"]},
+  solvant_nettoyage:  {label:"Solvant de nettoyage / white-spirit",  classe:"3",   ge:"III", kemler:"30",  un:"1300", etiq:"3",    code_dechet:"14 06 03*", filiere:"ISDD / régénération",       risque:2, tags:["infl"]},
+  colle_solvant:      {label:"Colle solvantée / mastic",             classe:"3",   ge:"II",  kemler:"33",  un:"1133", etiq:"3",    code_dechet:"08 04 09*", filiere:"ISDD / incinération",       risque:3, tags:["infl"]},
+  aerosol_infl:       {label:"Aérosol inflammable incomplet/percé",  classe:"2",   ge:"—",   kemler:"23",  un:"1950", etiq:"2.1",  code_dechet:"15 01 11*", filiere:"Déchargeur aérosols agréé", risque:4, tags:["gaz","infl","pres"]},
+  aerosol_non_infl:   {label:"Aérosol non inflammable (laque eau, déo)",classe:"2",ge:"—",   kemler:"20",  un:"1950", etiq:"2.2",  code_dechet:"15 01 11*", filiere:"Déchargeur aérosols agréé", risque:2, tags:["gaz","pres"]},
+  diluant_peinture:   {label:"Diluant peinture / thinner",           classe:"3",   ge:"II",  kemler:"33",  un:"1993", etiq:"3",    code_dechet:"14 06 03*", filiere:"ISDD",                      risque:3, tags:["infl","vap"]},
+  resine_epoxy:       {label:"Résine époxy / durcisseur",            classe:"8",   ge:"III", kemler:"80",  un:"3066", etiq:"8",    code_dechet:"08 04 09*", filiere:"ISDD / incinération",       risque:2, tags:["corr"]},
+  // ---- INDUSTRIE / CHIMIE ----
+  acide_faible:       {label:"Acide faible en solution (pH>3)",      classe:"8",   ge:"III", kemler:"80",  un:"1760", etiq:"8",    code_dechet:"06 01 06*", filiere:"Neutralisation / ISDD",     risque:2, tags:["corr","acid"]},
+  acide_fort:         {label:"Acide fort en solution (pH<3, >5%)",   classe:"8",   ge:"II",  kemler:"80",  un:"1760", etiq:"8",    code_dechet:"06 01 06*", filiere:"ISDD",                      risque:4, tags:["corr","acid"]},
+  acide_chlorhydrique:{label:"Acide chlorhydrique en solution",      classe:"8",   ge:"II",  kemler:"80",  un:"1789", etiq:"8",    code_dechet:"06 01 01*", filiere:"ISDD",                      risque:4, tags:["corr","acid","gaz_tox"]},
+  acide_sulfurique:   {label:"Acide sulfurique dilué (batteries)",   classe:"8",   ge:"II",  kemler:"80",  un:"2796", etiq:"8",    code_dechet:"06 01 01*", filiere:"Fondeur / neutralisation",  risque:4, tags:["corr","acid"]},
+  base_faible:        {label:"Base faible (lessiviel, détergent pH<12)",classe:"8",ge:"III", kemler:"80",  un:"1719", etiq:"8",    code_dechet:"06 02 06*", filiere:"ISDD / neutralisation",     risque:2, tags:["corr","base"]},
+  base_forte:         {label:"Base forte (soude, potasse pH>12)",    classe:"8",   ge:"II",  kemler:"80",  un:"1824", etiq:"8",    code_dechet:"06 02 06*", filiere:"ISDD",                      risque:4, tags:["corr","base"]},
+  solvant_chlore:     {label:"Solvant chloré (TCE, PCE, DCM...)",   classe:"6.1", ge:"III", kemler:"60",  un:"1710", etiq:"6.1",  code_dechet:"07 01 03*", filiere:"ISDD / incinération haute T°",risque:3, tags:["tox","chlor"]},
+  huile_industrielle: {label:"Huile industrielle / hydraulique minérale",classe:"3",ge:"III",kemler:"30", un:"1270", etiq:"3",    code_dechet:"13 01 10*", filiere:"ISDND / valorisateur",      risque:1, tags:["infl"]},
+  huile_synthetique:  {label:"Huile synthétique / semi-synthétique", classe:"3",   ge:"III", kemler:"30",  un:"1993", etiq:"3",    code_dechet:"13 01 11*", filiere:"ISDND / valorisateur",      risque:1, tags:["infl"]},
+  dechet_photo:       {label:"Déchet photochimique (fixateur, révélateur)",classe:"8",ge:"III",kemler:"80",un:"1760",etiq:"8",    code_dechet:"09 01 01*", filiere:"Récupérateur argent / ISDD", risque:2, tags:["corr"]},
+  toner_imprimante:   {label:"Toner / cartouche d'encre souillée",   classe:"9",   ge:"III", kemler:"90",  un:"3077", etiq:"9",    code_dechet:"08 03 17*", filiere:"Recycleur cartouches",      risque:1, tags:["env","sol"]},
+  produit_labo:       {label:"Déchet de laboratoire N.S.A.",         classe:"6.1", ge:"II",  kemler:"60",  un:"2902", etiq:"6.1",  code_dechet:"16 05 06*", filiere:"ISDD / incinération",       risque:3, tags:["tox"]},
+  mercure_liquide:    {label:"Mercure liquide / thermomètre brisé",  classe:"8",   ge:"I",   kemler:"80",  un:"2809", etiq:"8+6.1",code_dechet:"16 05 06*", filiere:"Récupérateur mercure agréé",risque:5, tags:["corr","tox","vapo"]},
+  acide_nitrique:     {label:"Acide nitrique dilué",                 classe:"8",   ge:"II",  kemler:"88",  un:"2031", etiq:"8+5.1",code_dechet:"06 01 03*", filiere:"ISDD",                      risque:5, tags:["corr","acid","oxyd"]},
+  // ---- COLLECTIVITÉS ----
+  eau_javel:          {label:"Eau de Javel / hypochlorite en solution",classe:"8",  ge:"III", kemler:"80",  un:"1791", etiq:"8",    code_dechet:"20 01 29*", filiere:"ISDD / neutralisation",     risque:3, tags:["corr","oxyd","gaz_tox"]},
+  produit_menager:    {label:"Produit ménager dangereux mixte",       classe:"9",   ge:"III", kemler:"90",  un:"3077", etiq:"9",    code_dechet:"20 01 29*", filiere:"ISDD",                      risque:1, tags:["env"]},
+  piles_alcalines:    {label:"Piles alcalines / Zn-C usagées",        classe:"9",   ge:"—",   kemler:"90",  un:"3028", etiq:"9",    code_dechet:"16 06 04",  filiere:"COREPILE / SCRELEC",        risque:1, tags:["sol"]},
+  neon_tube:          {label:"Néons / tubes fluorescents (mercure)",  classe:"9",   ge:"—",   kemler:"90",  un:"3077", etiq:"9",    code_dechet:"20 01 21*", filiere:"Recycleur Récylum",         risque:2, tags:["env","sol"]},
+  medicaments:        {label:"Médicaments non utilisés",              classe:"6.1", ge:"III", kemler:"60",  un:"1851", etiq:"6.1",  code_dechet:"20 01 31*", filiere:"Cyclamed / incinération",   risque:2, tags:["tox"]},
+  dechets_menagers_dd:{label:"DM dangereux mixtes (DASRI exclus)",   classe:"9",   ge:"III", kemler:"90",  un:"3077", etiq:"9",    code_dechet:"20 01 29*", filiere:"ISDD",                      risque:1, tags:["env"]},
+  pesticide_liquide:  {label:"Pesticide / herbicide liquide",         classe:"6.1", ge:"II",  kemler:"60",  un:"2902", etiq:"6.1",  code_dechet:"20 01 19*", filiere:"ISDD / incinération agréée",risque:4, tags:["tox"]},
+  pesticide_solide:   {label:"Pesticide / herbicide solide",          classe:"6.1", ge:"II",  kemler:"60",  un:"2761", etiq:"6.1",  code_dechet:"20 01 19*", filiere:"ISDD / incinération agréée",risque:3, tags:["tox","sol"]},
+  dechets_asbeste:    {label:"Déchets amiantés (voir onglet Identification)",classe:"9",ge:"—",kemler:"90",un:"2212",etiq:"9",     code_dechet:"17 06 01*", filiere:"ISDD uniquement",           risque:3, tags:["sol","amiante"]},
+  // ---- CAS COMPLEXES COLLECTEUR ----
+  boues_huilleuses:   {label:"Boues huileuses (fond de cuve, séparateur)",classe:"3",ge:"III",kemler:"30", un:"1993", etiq:"3",    code_dechet:"13 05 02*", filiere:"ISDD / valorisation énergie",risque:2, tags:["infl","pat"]},
+  eaux_huileuses:     {label:"Eaux huileuses / émulsions usagées",    classe:"3",   ge:"III", kemler:"30",  un:"1993", etiq:"3",    code_dechet:"13 01 09*", filiere:"ISDD / élimination eaux",   risque:2, tags:["infl"]},
+  degraissant_base_eau:{label:"Dégraissant base eau (neutre/alcalin)",classe:"8",  ge:"III", kemler:"80",  un:"1719", etiq:"8",    code_dechet:"14 06 02*", filiere:"ISDD / neutralisation",     risque:1, tags:["corr","base"]},
+  degraissant_solvant:{label:"Dégraissant solvant (chloré ou infl.)", classe:"3",  ge:"II",  kemler:"33",  un:"1993", etiq:"3",    code_dechet:"14 06 03*", filiere:"ISDD",                      risque:3, tags:["infl","vap"]},
+  copeaux_metal_huile:{label:"Copeaux métalliques imbibés d'huile",   classe:"4.2",ge:"III", kemler:"40",  un:"1309", etiq:"4.2",  code_dechet:"12 01 02*", filiere:"Fondeur / essorage",        risque:2, tags:["auto_infl","sol"]},
+};
+
+// ================================================================
+// RÈGLES D'INCOMPATIBILITÉ — ADR tableau 7.2.4 + pratique terrain
+// ================================================================
+const INCOMP_RULES = [
+  {a:["acide_fort","acide_faible","acide_chlorhydrique","acide_sulfurique","acide_nitrique","batterie_acide"],
+   b:["base_forte","base_faible","degraissant_base_eau"],
+   msg:"⛔ CRITIQUE — Acide + Base : réaction exothermique violente, projections corrosives brûlantes", level:"ko"},
+
+  {a:["acide_fort","acide_faible","acide_chlorhydrique","acide_sulfurique"],
+   b:["eau_javel"],
+   msg:"⛔ CRITIQUE — Acide + Hypochlorite : dégagement de CHLORE GAZEUX (Cl₂) — gaz toxique mortel, Cl.2.3", level:"ko"},
+
+  {a:["acide_nitrique"],
+   b:["huile_vidange","huile_boite","huile_hydraulique","huile_synthetique","huile_industrielle","essence_residus","gasoil_residus","peinture_solvant","solvant_nettoyage"],
+   msg:"⛔ CRITIQUE — Acide nitrique + matière organique/inflammable : risque d'inflammation spontanée et explosion", level:"ko"},
+
+  {a:["eau_javel"],
+   b:["base_forte","base_faible"],
+   msg:"⚠️ ATTENTION — Hypochlorite + base forte : dégagement de chaleur, instabilité possible", level:"warn"},
+
+  {a:["essence_residus","gasoil_residus","peinture_solvant","solvant_nettoyage","diluant_peinture","colle_solvant","degraissant_solvant"],
+   b:["eau_javel","acide_nitrique","acide_fort"],
+   msg:"⛔ CRITIQUE — Inflammable + oxydant/acide : risque d'inflammation spontanée et incendie", level:"ko"},
+
+  {a:["batterie_lithium"],
+   b:["acide_fort","acide_chlorhydrique","acide_sulfurique","eau_javel"],
+   msg:"⛔ CRITIQUE — Batterie lithium + liquide corrosif/oxydant : emballement thermique, feu de lithium incontrôlable", level:"ko"},
+
+  {a:["batterie_acide","batterie_lithium"],
+   b:["batterie_lithium","batterie_acide"],
+   msg:"⚠️ ATTENTION — Mélange batteries acide + lithium : court-circuit, risque thermique — séparer et emballer individuellement", level:"warn"},
+
+  {a:["aerosol_infl","aerosol_non_infl"],
+   b:["acide_fort","acide_chlorhydrique","eau_javel"],
+   msg:"⛔ CRITIQUE — Aérosol sous pression + corrosif : perforation du conteneur, libération de gaz inflammable sous pression", level:"ko"},
+
+  {a:["solvant_chlore"],
+   b:["base_forte","base_faible"],
+   msg:"⚠️ ATTENTION — Solvant chloré + base : dégagement de HCl (acide chlorhydrique gazeux) et produits toxiques", level:"warn"},
+
+  {a:["solvant_chlore"],
+   b:["essence_residus","gasoil_residus","peinture_solvant","solvant_nettoyage"],
+   msg:"⚠️ ATTENTION — Solvant chloré + inflammable : mélange pouvant créer des produits toxiques à l'incinération, filière séparée préférable", level:"warn"},
+
+  {a:["mercure_liquide"],
+   b:["acide_fort","acide_nitrique","acide_chlorhydrique"],
+   msg:"⛔ CRITIQUE — Mercure + acide : dissolution du mercure, dégagement de vapeurs de mercure très toxiques (Cl.6.1)", level:"ko"},
+
+  {a:["chiffons_souilles","copeaux_metal_huile"],
+   b:["acide_fort","acide_nitrique","eau_javel"],
+   msg:"⚠️ ATTENTION — Solides auto-inflammables souillés + oxydant : risque d'auto-inflammation accéléré", level:"warn"},
+
+  {a:["peinture_eau"],
+   b:["peinture_solvant","solvant_nettoyage","diluant_peinture"],
+   msg:"⚠️ INFO — Peinture eau + peinture solvant : filières différentes (08 01 12 vs 08 01 11*) — mélange à éviter pour la traçabilité BSD", level:"warn"},
+];
+
+// ================================================================
+// MOTEUR DE CALCUL UN — ADR 2.1.3 + tableau A chapitre 3.2
+// Hiérarchie stricte + 36 combinaisons répertoriées
+// ================================================================
+const DANGER_RANK  = {"1":100,"2":90,"3":80,"4.2":72,"4.1":71,"4.3":70,"5.1":60,"5.2":65,"6.1":50,"6.2":45,"7":40,"8":30,"9":10};
+const GE_RANK      = {"I":3,"II":2,"III":1,"—":0};
+
+// Table des UN N.S.A. selon combinaison de dangers
+// Format: {infl, corr, tox, gaz, combu, env, sol, pateux} → {un, desig, ge, kemler, tunnel, note}
+function determinerUN(flags, bestGE) {
+  const {infl, corr, tox, gaz, combu, env, sol, allLiq, allSol, hasPat, gaz_infl, gaz_non_infl, lith, acid, base, auto_infl, chlor} = flags;
+
+  // Gaz en priorité
+  if (gaz) {
+    if (gaz_infl) return {un:"1950",desig:"AÉROSOLS",ge:"—",kemler:"23",tunnel:"D/E",ge_calc:"—",note:"Aérosols inflammables — DS 63 applicable si masse ≤ 1kg/pièce et pression ≤ 500kPa"};
+    return {un:"1950",desig:"AÉROSOLS",ge:"—",kemler:"20",tunnel:"—",ge_calc:"—",note:"Aérosols non inflammables"};
+  }
+
+  // Lithium seul ou dominant
+  if (lith && !infl && !corr && !tox) {
+    return {un:"3480",desig:"BATTERIES AU LITHIUM-ION",ge:"—",kemler:"90",tunnel:"—",ge_calc:"—",note:"Règles spéciales DS 188/230/310 — vérifier état de charge et emballage individuel"};
+  }
+
+  // Auto-inflammable dominant
+  if (auto_infl) {
+    if (allSol) return {un:"1364",desig:"DÉCHETS DE COTON GRAS (ou mat. solide auto-inflammable N.S.A.)",ge:"III",kemler:"40",tunnel:"E",ge_calc:bestGE,note:"Cl.4.2 — stocker à l'écart de tout oxydant, pas d'empilement"};
+    return {un:"2006",desig:"PLASTIQUES SOUS FORME DE COPEAUX, AUTOCHAUFFE",ge:"III",kemler:"40",tunnel:"E",ge_calc:bestGE,note:"Cl.4.2 — vérifier art. 7.5.11 (chargement à ciel ouvert interdit)"};
+  }
+
+  // Comburant dominant
+  if (combu && !infl && !tox) {
+    if (allSol) return {un:"1479",desig:"MATIÈRE COMBURANTE SOLIDE, N.S.A.",ge:bestGE,kemler:"50",tunnel:"D/E",ge_calc:bestGE,note:"Cl.5.1 — séparer de tout inflammable, emb. hermétique"};
+    return {un:"3139",desig:"LIQUIDE COMBURANT, N.S.A.",ge:bestGE,kemler:"50",tunnel:"D/E",ge_calc:bestGE,note:"Cl.5.1"};
+  }
+
+  // ---- INFLAMMABLE dominant ----
+  if (infl) {
+    if (tox && corr) {
+      if (allSol||hasPat) return {un:"2929",desig:"LIQUIDE INFLAMMABLE, TOXIQUE, CORROSIF, N.S.A.",ge:bestGE,kemler:"386",tunnel:"D/E",ge_calc:bestGE,note:"Triple danger — GE I imposé si l'un des composants est GE I"};
+      return {un:"2929",desig:"LIQUIDE INFLAMMABLE, TOXIQUE, CORROSIF, N.S.A.",ge:bestGE,kemler:"386",tunnel:"D/E",ge_calc:bestGE,note:"Triple danger Cl.3 + 6.1 + 8"};
+    }
+    if (tox) {
+      if (allSol||hasPat) return {un:"2926",desig:"SOLIDE INFLAMMABLE, TOXIQUE, N.S.A.",ge:bestGE,kemler:"46",tunnel:"E",ge_calc:bestGE,note:"Cl.3+6.1 — emballage étanche, étiquette 3 + 6.1"};
+      return {un:"1992",desig:"LIQUIDE INFLAMMABLE, TOXIQUE, N.S.A.",ge:bestGE,kemler:"336",tunnel:"D/E",ge_calc:bestGE,note:"Cl.3+6.1 — étiquettes 3 et 6.1 obligatoires"};
+    }
+    if (corr) {
+      if (allSol||hasPat) return {un:"2925",desig:"SOLIDE INFLAMMABLE, CORROSIF, N.S.A.",ge:bestGE,kemler:"48",tunnel:"E",ge_calc:bestGE,note:"Cl.3+8 — étiquettes 3 et 8 obligatoires"};
+      return {un:"2924",desig:"LIQUIDE INFLAMMABLE, CORROSIF, N.S.A.",ge:bestGE,kemler:"38",tunnel:"D/E",ge_calc:bestGE,note:"Cl.3+8 — étiquettes 3 et 8 obligatoires"};
+    }
+    if (combu) {
+      return {un:"3149",desig:"PEROXYDE D'HYDROGÈNE ET LIQUIDE INFLAMMABLE, EN MÉLANGE, N.S.A.",ge:bestGE,kemler:"539",tunnel:"D/E",ge_calc:bestGE,note:"⚠️ Mélange oxydant+inflammable — EXTRÊMEMENT DANGEREUX — à éviter absolument"};
+    }
+    // Inflammable pur
+    if (allSol||hasPat) {
+      return {un:"3175",desig:"SOLIDES CONTENANT DU LIQUIDE INFLAMMABLE, N.S.A.",ge:bestGE,kemler:"40",tunnel:"E",ge_calc:bestGE,note:"Cl.4.1 — emb. imperméable, empêcher suintement"};
+    }
+    const geK = {"I":"33","II":"33","III":"30"}[bestGE]||"30";
+    return {un:"1993",desig:"LIQUIDE INFLAMMABLE, N.S.A.",ge:bestGE,kemler:geK,tunnel:"D/E",ge_calc:bestGE,note:"Cl.3 — vérifier le point d'éclair du mélange si possible"};
+  }
+
+  // ---- CORROSIF dominant ----
+  if (corr) {
+    if (tox) {
+      if (allSol) return {un:"3301",desig:"SOLIDE CORROSIF, TOXIQUE, N.S.A.",ge:bestGE,kemler:"86",tunnel:"E",ge_calc:bestGE,note:"Cl.8+6.1 — étiquettes 8 et 6.1"};
+      return {un:"2922",desig:"LIQUIDE CORROSIF, TOXIQUE, N.S.A.",ge:bestGE,kemler:"86",tunnel:"E",ge_calc:bestGE,note:"Cl.8+6.1 — étiquettes 8 et 6.1"};
+    }
+    if (acid && base) {
+      return {un:"1760",desig:"LIQUIDE CORROSIF, N.S.A. (neutralisation partielle)",ge:"II",kemler:"80",tunnel:"E",ge_calc:"II",note:"⚠️ Acide + base déjà mélangés : pH final à mesurer, neutralisation possible mais exothermique — SÉPARER si possible"};
+    }
+    if (acid) {
+      if (allSol) return {un:"1759",desig:"SOLIDE CORROSIF, ACIDE, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8 acide"};
+      return {un:"3264",desig:"LIQUIDE INORGANIQUE CORROSIF, ACIDE, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8 acide — étiquette 8"};
+    }
+    if (base) {
+      if (allSol) return {un:"1759",desig:"SOLIDE CORROSIF, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8 basique"};
+      return {un:"3266",desig:"LIQUIDE INORGANIQUE CORROSIF, BASIQUE, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8 basique — étiquette 8"};
+    }
+    if (allSol) return {un:"1759",desig:"SOLIDE CORROSIF, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8"};
+    return {un:"1760",desig:"LIQUIDE CORROSIF, N.S.A.",ge:bestGE,kemler:"80",tunnel:"E",ge_calc:bestGE,note:"Cl.8 — étiquette 8"};
+  }
+
+  // ---- TOXIQUE dominant ----
+  if (tox) {
+    if (chlor) {
+      if (allSol) return {un:"2811",desig:"SOLIDE ORGANIQUE TOXIQUE, N.S.A. (chloré)",ge:bestGE,kemler:"60",tunnel:"E",ge_calc:bestGE,note:"Cl.6.1 — solvant chloré : incinération haute température obligatoire"};
+      return {un:"2810",desig:"LIQUIDE ORGANIQUE TOXIQUE, N.S.A. (chloré)",ge:bestGE,kemler:"60",tunnel:"E",ge_calc:bestGE,note:"Cl.6.1 — solvant chloré : filière incinération agréée uniquement"};
+    }
+    if (allSol) return {un:"2811",desig:"SOLIDE ORGANIQUE TOXIQUE, N.S.A.",ge:bestGE,kemler:"60",tunnel:"E",ge_calc:bestGE,note:"Cl.6.1"};
+    return {un:"2810",desig:"LIQUIDE ORGANIQUE TOXIQUE, N.S.A.",ge:bestGE,kemler:"60",tunnel:"E",ge_calc:bestGE,note:"Cl.6.1 — étiquette 6.1"};
+  }
+
+  // ---- ENVIRONNEMENT / DIVERS ----
+  if (env || (!infl && !corr && !tox && !gaz)) {
+    if (allSol||hasPat) return {un:"3077",desig:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, SOLIDE, N.S.A.",ge:"III",kemler:"90",tunnel:"—",ge_calc:"III",note:"Cl.9 — polluant marin probable, vérifier DS 335/274"};
+    return {un:"3082",desig:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, LIQUIDE, N.S.A.",ge:"III",kemler:"90",tunnel:"—",ge_calc:"III",note:"Cl.9 — polluant marin probable, vérifier DS 335/274"};
+  }
+
+  // Fallback sécurisé
+  return {un:"3077",desig:"MATIÈRE DANGEREUSE POUR L'ENVIRONNEMENT, SOLIDE, N.S.A.",ge:"III",kemler:"90",tunnel:"—",ge_calc:"III",note:"Classification par défaut — vérifier dans le tableau A ADR"};
+}
+
+let composants = [];
+
+// Cas terrain prédéfinis
+const PRESETS = {
+  huile_liq_refroid:  [{type:"huile_vidange",qte:30,etat:"liquide"},{type:"liq_refroid",qte:10,etat:"liquide"}],
+  peinture_emballages:[{type:"fonds_pateux",qte:8,etat:"pateux"},{type:"emballage_souille",qte:5,etat:"solide"},{type:"peinture_solvant",qte:3,etat:"liquide"}],
+  solvants_mixtes:    [{type:"solvant_nettoyage",qte:15,etat:"liquide"},{type:"essence_residus",qte:5,etat:"liquide"},{type:"colle_solvant",qte:2,etat:"liquide"}],
+  aerosols_divers:    [{type:"aerosol_infl",qte:3,etat:"gaz"},{type:"aerosol_non_infl",qte:2,etat:"gaz"},{type:"peinture_solvant",qte:1,etat:"liquide"}],
+  acides_bases:       [{type:"acide_faible",qte:5,etat:"liquide"},{type:"base_faible",qte:5,etat:"liquide"}],
+  piles_batteries:    [{type:"piles_alcalines",qte:2,etat:"solide"},{type:"batterie_lithium",qte:1,etat:"solide"},{type:"batterie_nimh",qte:1,etat:"solide"}],
+  boues_garage:       [{type:"huile_vidange",qte:20,etat:"liquide"},{type:"boues_huilleuses",qte:15,etat:"pateux"},{type:"filtre_huile",qte:5,etat:"solide"},{type:"chiffons_souilles",qte:3,etat:"solide"}],
+  dechets_peintre:    [{type:"peinture_solvant",qte:5,etat:"liquide"},{type:"diluant_peinture",qte:3,etat:"liquide"},{type:"fonds_pateux",qte:4,etat:"pateux"},{type:"emballage_souille",qte:3,etat:"solide"},{type:"aerosol_infl",qte:1,etat:"gaz"}],
+  solvants_chlores:   [{type:"solvant_chlore",qte:10,etat:"liquide"},{type:"degraissant_solvant",qte:5,etat:"liquide"},{type:"emballage_souille",qte:2,etat:"solide"}],
+  dechets_menagers:   [{type:"produit_menager",qte:5,etat:"liquide"},{type:"piles_alcalines",qte:1,etat:"solide"},{type:"aerosol_non_infl",qte:1,etat:"gaz"},{type:"neon_tube",qte:1,etat:"solide"}],
+  eaux_huileuses:     [{type:"eaux_huileuses",qte:50,etat:"liquide"},{type:"degraissant_base_eau",qte:10,etat:"liquide"}],
+  acides_industrie:   [{type:"acide_chlorhydrique",qte:5,etat:"liquide"},{type:"acide_sulfurique",qte:3,etat:"liquide"},{type:"dechet_photo",qte:2,etat:"liquide"}],
+};
+
+function loadPreset(key) {
+  composants = PRESETS[key].map((c,i)=>({id:i,...c}));
+  renderComposants();
+  analyserMelange();
+}
+
+function addComposant() {
+  const type=document.getElementById('new-comp-type').value;
+  const qte=parseFloat(document.getElementById('new-comp-qte').value)||0;
+  const etat=document.getElementById('new-comp-etat').value;
+  if(!type){alert('Sélectionnez un type de composant.');return;}
+  composants.push({id:Date.now(),type,qte,etat});
+  document.getElementById('new-comp-type').value='';
+  document.getElementById('new-comp-qte').value='';
+  renderComposants();
+  analyserMelange();
+}
+
+function removeComposant(id) {
+  composants=composants.filter(c=>c.id!==id);
+  renderComposants();
+  analyserMelange();
+}
+
+function renderComposants() {
+  const container=document.getElementById('composants-list');
+  if(!composants.length){container.innerHTML='<div style="color:#889;font-size:13px;padding:8px 0">Aucun composant ajouté.</div>';return;}
+  container.innerHTML=composants.map(c=>{
+    const d=COMP_DB[c.type]||{};
+    const r=d.risque||1;
+    const bg=r>=5?'#ffd6d6':r>=4?'#ffeaea':r>=3?'#fff8e1':'#f0f6ff';
+    const bo=r>=5?'#c62828':r>=4?'#f44336':r>=3?'#f9a825':'#7ab4ef';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:6px;background:${bg};border:1.5px solid ${bo};border-radius:8px;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:500;flex:1;min-width:150px">${d.label||c.type}</span>
+      <span class="chip chip-gray" style="font-size:11px">${c.qte||'?'} kg/L · ${c.etat}</span>
+      <span class="chip chip-blue" style="font-size:11px">Cl.${d.classe||'?'} GE ${d.ge||'?'}</span>
+      <span class="chip" style="background:#e8f5e9;color:#2e7d32;font-size:11px">UN ${d.un||'?'}</span>
+      <span style="font-size:10px;color:${bo};font-weight:600">${'⬛'.repeat(Math.min(r,5))}</span>
+      <button onclick="removeComposant(${c.id})" style="background:none;border:none;cursor:pointer;color:#c62828;font-size:16px;padding:0 4px">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function analyserMelange() {
+  if(!composants.length){
+    document.getElementById('melange-result').innerHTML='<div class="result-info"><div class="rb-title">ℹ️ Ajoutez au moins un composant pour obtenir la classification.</div></div>';
+    document.getElementById('melange-nsa').style.display='none';
+    document.getElementById('incompatibilite-alert').style.display='none';
+    return;
+  }
+
+  const types=composants.map(c=>c.type);
+
+  // 1. Incompatibilités
+  let incompMessages=[];
+  INCOMP_RULES.forEach(rule=>{
+    const hasA=rule.a.some(t=>types.includes(t));
+    const hasB=rule.b.some(t=>types.includes(t));
+    if(hasA&&hasB&&rule.a[0]!==rule.b[0]) incompMessages.push({msg:rule.msg,level:rule.level});
+  });
+  const incompEl=document.getElementById('incompatibilite-alert');
+  if(incompMessages.length){
+    incompEl.style.display='block';
+    incompEl.innerHTML=incompMessages.map(m=>`<div class="${m.level==='ko'?'result-ko':'result-warn'}" style="margin-bottom:8px">
+      <div class="rb-title">${m.msg}</div>
+      <div class="rb-body">${m.level==='ko'?'<b>⛔ TRANSPORT INTERDIT en l\'état — séparez ces composants avant conditionnement.</b>':'<b>⚠️ Vérification terrain indispensable — emballer séparément si possible.</b>'}</div>
+    </div>`).join('');
+  } else {
+    incompEl.style.display='none';
+  }
+
+  // 2. Collecter flags de danger
+  let bestClasse="9", bestGE="—", totalQte=0, codeDechets=[], filieres=[];
+  const classesPresentes=[];
+  const flags = {infl:false,corr:false,tox:false,gaz:false,combu:false,env:false,sol:false,allLiq:true,allSol:true,hasPat:false,gaz_infl:false,gaz_non_infl:false,lith:false,acid:false,base:false,auto_infl:false,chlor:false};
+
+  composants.forEach(c=>{
+    const d=COMP_DB[c.type]; if(!d) return;
+    totalQte+=(c.qte||0);
+    classesPresentes.push(d.classe);
+    if(d.code_dechet&&!codeDechets.includes(d.code_dechet)) codeDechets.push(d.code_dechet);
+    if(d.filiere&&!filieres.includes(d.filiere)) filieres.push(d.filiere);
+
+    // Classe dominante
+    const rank=DANGER_RANK[d.classe]||0;
+    if(rank>( DANGER_RANK[bestClasse]||0 )){bestClasse=d.classe;}
+    if(GE_RANK[d.ge]>GE_RANK[bestGE]) bestGE=d.ge;
+
+    // Flags
+    const tags=d.tags||[];
+    if(tags.includes('infl'))   flags.infl=true;
+    if(tags.includes('corr'))   flags.corr=true;
+    if(tags.includes('tox'))    flags.tox=true;
+    if(tags.includes('gaz'))    flags.gaz=true;
+    if(tags.includes('env'))    flags.env=true;
+    if(tags.includes('lith'))   flags.lith=true;
+    if(tags.includes('acid'))   flags.acid=true;
+    if(tags.includes('base'))   flags.base=true;
+    if(tags.includes('auto_infl')) flags.auto_infl=true;
+    if(tags.includes('chlor'))  flags.chlor=true;
+    if(tags.includes('oxyd'))   flags.combu=true;
+    if(tags.includes('sol'))    flags.allLiq=false;
+    if(tags.includes('pat'))  { flags.allLiq=false; flags.hasPat=true; flags.allSol=false; }
+    if(c.etat==='liquide')      flags.allSol=false;
+    if(c.etat==='gaz')        { flags.allSol=false; flags.allLiq=false; if(tags.includes('infl')) flags.gaz_infl=true; else flags.gaz_non_infl=true; }
+    if(c.etat==='solide')       flags.allLiq=false;
+  });
+  if(bestGE==="—") bestGE="III";
+
+  // 3. Calcul UN
+  const result=determinerUN(flags, bestGE);
+
+  // 4. Affichage résultat
+  const hasKO=incompMessages.some(m=>m.level==='ko');
+  const hasWarn=incompMessages.some(m=>m.level==='warn');
+  const rc=hasKO?'result-ko':hasWarn?'result-warn':'result-ok';
+
+  document.getElementById('melange-result').innerHTML=`<div class="${rc}">
+    <div class="rb-title">${hasKO?'⛔ MÉLANGE INTERDIT':hasWarn?'⚠️ Mélange à risque':'✅ Classification du mélange déterminée'}</div>
+    <div class="rb-body">
+      <b>Classes présentes :</b> ${[...new Set(classesPresentes)].join(', ')}<br>
+      <b>Classe dominante retenue :</b> ${bestClasse} &nbsp;·&nbsp; <b>GE retenu :</b> ${result.ge_calc||bestGE} &nbsp;·&nbsp; <b>Kemler :</b> ${result.kemler}<br>
+      <b>Quantité totale :</b> ${totalQte.toFixed(1)} kg/L<br>
+      <b>Code UN calculé :</b> <span style="font-weight:700;font-size:14px;color:#1e6fbf">UN ${result.un}</span> — ${result.desig}<br>
+      ${result.note?`<span style="color:#7a5c00">ℹ️ ${result.note}</span>`:''}
+      ${hasKO?'<br><b style="color:#c62828">⛔ NE PAS transporter en l\'état — séparez les composants incompatibles.</b>':''}
+    </div>
+  </div>`;
+
+  // 5. Bloc désignation complète
+  document.getElementById('nsa-block').innerHTML=`
+    <b>Inscription document de transport (ADR 5.4.1.1) :</b>
+    <div style="background:#fff;border:2px solid #1e6fbf;border-radius:6px;padding:12px;margin:8px 0;font-family:monospace;font-size:13px;line-height:1.8">
+      UN ${result.un} ${result.desig}, ${bestClasse}, GE ${result.ge_calc||bestGE}, (${result.kemler})
+    </div>
+    <b>Mention DS 274 obligatoire (composants dangereux à nommer) :</b>
+    <div style="background:#fffbf0;border:1px dashed #f9a825;border-radius:6px;padding:10px;margin:8px 0;font-family:monospace;font-size:12px;line-height:1.7">
+      "...contenant : ${composants.map(c=>COMP_DB[c.type]?.label||c.type).join(' / ')}"
+    </div>
+    <b>Code tunnel :</b> <span class="chip chip-blue">${result.tunnel||'—'}</span>
+    &nbsp;<b>Étiquette(s) :</b> <span class="chip chip-orange">Classe ${bestClasse}</span>
+    <br><span style="font-size:11px;color:#889;margin-top:6px;display:block">Réf. ADR 5.4.1.1 + DS 274 — Vérifier dans le tableau A du chapitre 3.2 pour les dispositions spéciales éventuelles.</span>`;
+
+  // 6. Bloc déchets
+  const isDanger=codeDechets.some(c=>c.endsWith('*'));
+  const codeBSD = codeDechets.length>1 ? "15 01 10* (ou code prépondérant à confirmer avec l'installation)" : (codeDechets[0]||"—");
+  document.getElementById('code-dechet-block').innerHTML=`
+    <b>Codes déchets des composants :</b><br>
+    ${codeDechets.map(c=>`<span class="chip chip-green" style="margin:2px">${c}${c.endsWith('*')?' ⚠️':'✓'}</span>`).join('')}
+    <br><br><b>Code BSD retenu pour ce mélange :</b><br>
+    <span class="chip chip-orange" style="font-size:12px;padding:6px 12px">${codeBSD}</span>
+    <br><br><b>Filières identifiées :</b><br>
+    ${filieres.map(f=>`<span class="chip chip-blue" style="margin:2px;font-size:11px">${f}</span>`).join('')}
+    <br><br><span style="font-size:12px;color:#556;line-height:1.7">
+    ${isDanger?'⚠️ Déchets dangereux (astérisque *) — BSD obligatoire, collecteur agréé, récépissé préfectoral requis.':'✓ Déchets non dangereux — bon de suivi si > seuils.'}
+    ${codeDechets.length>1?'<br>⚠️ Mélange de codes déchets différents : vérifier l\'acceptation par l\'installation destinataire avant envoi. Le BSD peut indiquer le code le plus représentatif ou le code "mélange".':''}
+    </span>`;
+
+  document.getElementById('melange-nsa').style.display='block';
+  state.melange={un:result.un,name:result.desig,classe:bestClasse,ge:result.ge_calc||bestGE,kemler:result.kemler,tunnel:result.tunnel||'—'};
+}
+
+function transfererVersPrincipal(){
+  if(!state.melange) return;
+  const m=state.melange;
+  const fields={'un-number':m.un,'dot-name':m.name,'classe':m.classe,'ge':m.ge,'kemler':m.kemler,'tunnel':m.tunnel};
+  Object.entries(fields).forEach(([id,val])=>{
+    const el=document.getElementById(id); if(el){el.value=val;el.classList.add('autofilled');}
+  });
+  checkSeuils();
+  showTab('identification');
+  document.querySelector('.info-strip').innerHTML='✅ Résultat du mélange transféré depuis l\'onglet Mélanges. Renseignez la quantité totale pour calculer les seuils ADR.';
+}
+
+
+function renderConditionnement() {
+  const type = document.getElementById('type-emb').value;
+  if(type) onEmbChange(type);
+}
+
+function onEmbChange(val) {
+  const checks = {
+    colis:['Emballage homologué ONU (marque UN + niveau X/Y/Z + GE)','Emballage conforme instructions chapitre 4.1 ADR','Fermeture étanche — épreuve d\'étanchéité passée','Pas de fuite ou détérioration visible','Suremballage correctement marqué si utilisé (5.1.2)','Compatibilité chimique emballage/matière vérifiée','Masse brute max. respectée'],
+    GRV:['GRV (IBC) homologué ONU — code type inscrit','Date épreuve périodique valide (max 2,5 ans)','Pastille d\'identification sur le GRV','Capacité maximale respectée','Bouchon ou dispositif de fermeture conforme','Pas de déformation ou corrosion','Rinçage ou nettoyage si réutilisé'],
+    citerne:['Agrément citerne valide (certificat d\'agrément véhicule)','Date de l\'épreuve périodique valide','Code citerne conforme (P, G, F, L, MEGC…)','Pression d\'épreuve suffisante pour la matière','Compatibilité matériaux citerne/produit','Dispositifs sécurité (soupapes, disques) conformes','Système de fermeture des vannes vérifié'],
+    vrac:['Conteneur vrac (BK1/BK2/BK3) homologué','Disposition spéciale vrac applicable (col. 17 tableau A)','Bâchage ou fermeture selon exigences','Nettoyage préalable si réutilisation','Compatibilité matière/contenant'],
+    gaz:['Bouteille conforme directive équipements sous pression','Date requalification périodique valide','Valve protégée (chapeau de protection)','Étiquetage couleur conventionnel EN 1089-3','Arrimage correct : debout ou fixé','Pas de dommage visible sur le corps du récipient']
+  };
+  const list = checks[val] || [];
+  document.getElementById('emb-checks').innerHTML = list.length ?
+    list.map((it,i)=>`<div class="checklist-item"><input type="checkbox" id="emb${i}"><label for="emb${i}">${it}</label></div>`).join('') :
+    '<div class="result-info"><div class="rb-title">Sélectionnez un type de contenant.</div></div>';
+}
+
+function onRegimeChange(val) {
+  const el=document.getElementById('regime-info');
+  if(val==='LQ'){el.className='result-warn';el.innerHTML='<div class="rb-title">⚠️ Quantités limitées — Chapitre 3.4</div><div class="rb-body">Marquage losange vide LQ sur colis ET véhicule. Emballage interne limité (col. 7a). Pas de panneau orange ni placard. Pas de certificat ADR conducteur requis. Masse brute max. 30 kg/colis.</div>';}
+  else if(val==='EQ'){el.className='result-ok';el.innerHTML='<div class="rb-title">✅ Quantités exceptées — Chapitre 3.5</div><div class="rb-body">Exemption totale ADR. Emballages selon 3.5.2, quantités infimes. Marquage "E" sur colis. Aucune autre formalité ADR. Vérifier col. 7b ≠ 0.</div>';}
+  else{el.className='result-info';el.innerHTML='<div class="rb-title">ℹ️ Régime complet — toutes les dispositions ADR s\'appliquent.</div><div class="rb-body">Conditionnement homologué ONU requis, documents complets, signalisation véhicule obligatoire.</div>';}
+}
+
+// ---- ETIQUETAGE ----
+function renderEtiquetage() {
+  const classe = document.getElementById('classe').value;
+  const un = document.getElementById('un-number').value || '????';
+  const ge = document.getElementById('ge').value;
+  const pm = document.getElementById('pol-marin').value;
+  const name = document.getElementById('dot-name').value;
+  const container = document.getElementById('etiquetage-content');
+
+  if(!classe){container.innerHTML='<div class="result-info"><div class="rb-title">ℹ️ Renseignez un numéro ONU dans l\'onglet Identification.</div></div>';return;}
+
+  const COLORS = {'3':'#cc2200','2':'#1155bb','2.1':'#ff0000','2.2':'#00aa00','2.3':'#808080','4.1':'#cc2200','4.2':'#cc2200','4.3':'#1155bb','5.1':'#ff8800','5.2':'#ff5500','6.1':'#228800','6.2':'#228800','7A':'#ffee00','7B':'#ffee00','7':'#ffee00','8':'#003399','9':'#777777','9A':'#333333'};
+  const etiq = document.getElementById('etiq-auto').value || classe;
+  const col = COLORS[etiq.split('+')[0]] || '#888';
+
+  container.innerHTML = `
+    <div class="section-lbl">Étiquettes de danger requises</div>
+    <div class="chip-row">${etiq.split('+').map(e=>`<span class="chip chip-blue">📐 Étiquette ${e}</span>`).join('')}${pm&&pm.includes('OUI')?'<span class="chip chip-green">🐟🌳 Polluant marin</span>':''}</div>
+    <div style="font-size:12px;color:#889;margin-bottom:12px">Format : 100×100 mm min. (colis) · 250×250 mm (fûts >450L / GRV) · Forme losange · Réf. ADR 5.2.2</div>
+
+    <div class="section-lbl">Marquages obligatoires sur le colis</div>
+    <div style="font-size:13px;line-height:2.2">
+      <span class="chip chip-orange">UN ${un}</span> Fond orange, texte noir, hauteur min. 12mm (25mm si colis >30kg) · ADR 5.2.1.1<br>
+      <span class="chip chip-blue">Désignation officielle</span> "${name || '(à compléter)'}"<br>
+      ${ge&&ge!=='—'?`<span class="chip chip-gray">GE ${ge}</span> Groupe d'emballage visible sur colis<br>`:''}
+      ${pm&&pm.includes('OUI')?'<span class="chip chip-green">🐟🌳 Polluant marin</span> Marquage réglementaire 5.2.1.8.1<br>':''}
+      <span class="chip chip-gray">↑↑ Flèches</span> Si contenant liquide — sens de montage (5.2.1.9)<br>
+      <span class="chip chip-gray">Masse brute</span> Si colis ≥ 30 kg (5.2.1.1 a)<br>
+    </div>
+
+    <div class="section-lbl" style="margin-top:14px">Checklist étiquetage</div>
+    ${['Étiquette(s) de danger format et couleur conformes ADR 5.2.2','Numéro ONU sur fond orange présent et lisible (5.2.1.1)','Désignation officielle de transport complète','Groupe d\'emballage mentionné si applicable','Marquage polluant marin si nécessaire (5.2.1.8)','Flèches de montage si contenant liquide (5.2.1.9)','Masse brute si colis ≥ 30 kg','Marque homologation ONU sur emballage visible'].map((it,i)=>`<div class="checklist-item"><input type="checkbox" id="etc${i}"><label for="etc${i}">${it}</label></div>`).join('')}
+  `;
+}
+
+// ---- TRANSPORT ----
+function selectTransport(type) {
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('sel'));
+  const el=document.getElementById('tc-'+type);
+  if(el)el.classList.add('sel');
+  state.transport_type=type;
+  renderEquipements(type);
+  renderPlacardage(type);
+  renderRestrictions(type);
+}
+
+function renderEquipements(type) {
+  const BASE=[
+    {l:'Extincteur 2 kg poudre ABC (cabine)',r:'8.1.4.1 a)'},
+    {l:'Extincteur 6 kg poudre ABC (chargement)',r:'8.1.4.1 b)'},
+    {l:'Au moins 1 cale de roue adaptée au véhicule',r:'8.1.5'},
+    {l:'2 feux clignotants orange autonomes',r:'8.1.5'},
+    {l:'1 gilet haute visibilité par occupant',r:'8.1.5'},
+    {l:'1 lampe de poche (non à flamme nue)',r:'8.1.5'},
+    {l:'Gants de protection (résistants aux produits)',r:'8.1.5'},
+    {l:'Lunettes / écran facial (si applicable selon matière)',r:'8.1.5'},
+    {l:'Masque d\'évacuation d\'urgence (si applicable)',r:'8.1.5'},
+    {l:'Consignes de sécurité écrites (fiche W) en cabine',r:'5.4.3 / 8.1.2.1'},
+    {l:'Documents de transport complets et accessibles',r:'8.1.2'},
+  ];
+  const CITERNE=[
+    {l:'Système d\'arrêt d\'urgence (coup de poing)',r:'9.7.9'},
+    {l:'Mise à la terre électrostatique (liquides inflammables)',r:'7.5.10.3'},
+    {l:'Dispositif anti-débordement (FL)',r:'9.7.8.3'},
+    {l:'Pelle et bassin collecteur (déversements)',r:'7.5.11'},
+  ];
+  let items=[...BASE];
+  if(['FL','AT'].includes(type))items=[...items,...CITERNE];
+  document.getElementById('equipements-list').innerHTML=items.map((it,i)=>
+    `<div class="checklist-item"><input type="checkbox" id="eq${i}"><label for="eq${i}">${it.l} <span class="check-ref">ADR ${it.r}</span></label></div>`
+  ).join('');
+}
+
+function renderPlacardage(type) {
+  const classe=document.getElementById('classe').value;
+  const kemler=document.getElementById('kemler').value||'??';
+  const un=document.getElementById('un-number').value||'????';
+  let html='';
+  if(type==='colis'){
+    html=`<div class="result-info"><div class="rb-title">🟧 Panneaux orange NON codifiés (transport en colis)</div><div class="rb-body">
+      · Panneau orange <b>400×300 mm</b> rétro-réfléchissant à l'avant et à l'arrière du véhicule (si seuil 1.1.3.6 dépassé)<br>
+      · Placards de danger losange <b>250×250 mm</b> sur les côtés du véhicule, couleur selon classe ${classe||'—'}<br>
+      · Réf. ADR 5.3.1.2 & 5.3.2
+    </div></div>`;
+  } else {
+    html=`<div class="result-warn"><div class="rb-title">🟧 Panneaux orange CODIFIÉS (citerne / vrac)</div><div class="rb-body">
+      <div style="display:inline-flex;flex-direction:column;border:2px solid #ff8800;border-radius:4px;overflow:hidden;font-weight:700;font-size:15px;margin:6px 0;background:#ff8800;width:80px;text-align:center">
+        <div style="padding:3px 0;border-bottom:2px solid #333;color:#000">${kemler}</div>
+        <div style="padding:3px 0;color:#000">UN ${un}</div>
+      </div><br>
+      · Panneau <b>400×300 mm</b> avant ET arrière, sur chaque compartiment (citernes multi-compartiments)<br>
+      · Panneaux sur côtés de chaque compartiment citerne<br>
+      · Placards de danger 250×250 mm sur chaque côté + arrière de la citerne<br>
+      · Chiffres noirs H min. 100 mm, trait médian noir, fond rétro-réfléchissant<br>
+      · Réf. ADR 5.3.1 & 5.3.2
+    </div></div>`;
+  }
+  document.getElementById('placardage-info').innerHTML=html;
+}
+
+function renderRestrictions(type) {
+  const tunnel=document.getElementById('tunnel').value||'—';
+  document.getElementById('restrictions-info').innerHTML=`
+    <div class="result-info" style="margin-bottom:8px"><div class="rb-title">🚇 Code restriction tunnel : <b>${tunnel}</b></div>
+    <div class="rb-body">A=tous tunnels libres · B=tunnels ≥B interdits · C=tunnels ≥C interdits · D=tunnels ≥D interdits · E=tous tunnels interdits<br>Réf. ADR 1.9.5 — Vérifier arrêtés préfectoraux locaux.</div></div>
+    <div class="result-info"><div class="rb-title">⏰ Restrictions horaires & zones à vérifier</div>
+    <div class="rb-body">
+      · Arrêté du 02/03/2015 : interdictions week-end/jours fériés pour poids lourds TMD<br>
+      · Paris : arrêté du 21/05/2012 pour transports de MD en zone urbaine<br>
+      · Classe 1 : restrictions de stationnement ADR 7.5.4 (éviter zones habitées)<br>
+      · Citerne Cl.3 > 3,5T : vérifier restrictions centre-villes<br>
+      · Signalement itinéraire : obligatoire pour certains transports selon préfectures
+    </div></div>`;
+}
+
+// ---- DOCUMENTS ----
+function renderDocuments() {
+  const un=document.getElementById('un-number').value||'????';
+  const name=document.getElementById('dot-name').value||'(désignation)';
+  const classe=document.getElementById('classe').value||'—';
+  const ge=document.getElementById('ge').value||'—';
+  const kemler=document.getElementById('kemler').value||'—';
+  const qte=document.getElementById('quantite').value||'—';
+  const pm=document.getElementById('pol-marin').value;
+  const tunnel=document.getElementById('tunnel').value||'—';
+  const regime=document.getElementById('regime-lq')?.value||'plein';
+
+  const docs=[
+    {l:'Document de transport (lettre de voiture, CMR ou document propre)',r:'5.4.1',req:true},
+    {l:'Consignes de sécurité écrites (fiche W) — modèle ADR 5.4.3.4',r:'8.1.2.1',req:true},
+    {l:'Certificat ADR conducteur en cours de validité (catégorie adaptée)',r:'8.2.1',req:true},
+    {l:'Carte grise du véhicule',r:'8.1.2.2',req:true},
+    {l:'Certificat d\'agrément du véhicule (citerne / vrac / MEMU)',r:'9.1.2',req:type==='FL'||type==='AT'},
+    {l:'Contrôle technique en cours de validité',r:'8.1.6',req:true},
+    {l:'Bordereau de suivi de déchets (BSD) — si déchet dangereux',r:'Code env. R541-45',req:true},
+    {l:'Récépissé préfectoral collecteur de déchets dangereux',r:'Code env.',req:true},
+    {l:'Autorisation préalable transport Cl.1 ou Cl.7 (si applicable)',r:'ADR 1.10',req:false},
+  ];
+  document.getElementById('docs-list').innerHTML=docs.map((d,i)=>
+    `<div class="checklist-item"><input type="checkbox" id="doc${i}"><label for="doc${i}">${d.l} <span class="check-ref">· Réf. ADR ${d.r}</span></label></div>`
+  ).join('');
+
+  document.getElementById('doc-transport-content').innerHTML=`
+    <div class="result-info"><div class="rb-title">📋 Mentions obligatoires — ADR 5.4.1.1</div>
+    <div class="rb-body" style="font-family:monospace;background:#f8faff;padding:10px;border-radius:6px;margin-top:6px;line-height:2;font-size:12px">
+      UN ${un} ${name}, ${classe}, ${ge!=='—'?'GE '+ge+',':''} (${kemler}), ${qte} kg/L<br>
+      ${pm&&pm.includes('OUI')?'⚠ POLLUANT MARIN<br>':''}
+      Régime : ${regime==='LQ'?'QUANTITÉS LIMITÉES':regime==='EQ'?'QUANTITÉS EXCEPTÉES':'Régime complet'}<br>
+      Tunnel : (${tunnel})<br>
+      Nom & adresse expéditeur :<br>
+      Nom & adresse destinataire :<br>
+      Quantité totale / nombre de colis / type emballage :<br>
+      Nom & signature expéditeur :<br>
+    </div></div>`;
+
+  renderFiliereChecks();
+}
+
+function renderFiliereChecks() {
+  const agree=document.getElementById('agree')?.value;
+  const bsd=document.getElementById('bsd-num')?.value;
+  document.getElementById('filiere-checks').innerHTML=`
+    <div class="${agree==='oui'?'result-ok':'result-ko'}" style="margin-top:10px">
+      <div class="rb-title">${agree==='oui'?'✅ Collecteur agréé':'❌ Agrément collecteur à vérifier'}</div>
+      <div class="rb-body">BSD ${bsd?'N° '+bsd:'non renseigné'}. Conservation obligatoire 3 ans. Traçabilité : producteur → collecteur → éliminateur/valorisateur.<br>
+      Code déchet : ${document.getElementById('code-dechet')?.value||'non renseigné'} — Filière : ${document.getElementById('filiere')?.value||'non renseignée'}</div>
+    </div>`;
+}
+
+// ---- BILAN ----
+function renderBilan() {
+  const un=document.getElementById('un-number').value;
+  const classe=document.getElementById('classe').value;
+  const ge=document.getElementById('ge').value;
+  const qte=document.getElementById('quantite').value;
+  const bsd=document.getElementById('bsd-num')?.value;
+  const agree=document.getElementById('agree')?.value;
+  const typeEmb=document.getElementById('type-emb').value;
+  const marqueONU=document.getElementById('marque-onu').value;
+
+  const items=[
+    {cat:'Identification',l:'Numéro ONU identifié et renseigné',ok:!!un},
+    {cat:'Identification',l:'Désignation officielle de transport renseignée',ok:!!document.getElementById('dot-name').value},
+    {cat:'Identification',l:'Classe ADR renseignée',ok:!!classe},
+    {cat:'Identification',l:'Groupe d\'emballage renseigné',ok:!!ge&&ge!=='—'},
+    {cat:'Identification',l:'Numéro de danger (Kemler) renseigné',ok:!!document.getElementById('kemler').value},
+    {cat:'Identification',l:'Code tunnel renseigné',ok:!!document.getElementById('tunnel').value},
+    {cat:'Identification',l:'Quantité renseignée',ok:!!qte},
+    {cat:'Conditionnement',l:'Type d\'emballage sélectionné',ok:!!typeEmb},
+    {cat:'Conditionnement',l:'Marque homologation ONU confirmée',ok:marqueONU==='oui'},
+    {cat:'Conditionnement',l:'Régime LQ / EQ / complet défini',ok:true},
+    {cat:'Étiquetage',l:'Étiquettes de danger conformes à la classe',ok:!!classe},
+    {cat:'Étiquetage',l:'Numéro ONU sur fond orange présent',ok:!!un},
+    {cat:'Étiquetage',l:'Désignation officielle visible sur colis',ok:!!document.getElementById('dot-name').value},
+    {cat:'Transport',l:'Type de véhicule défini',ok:!!state.transport_type},
+    {cat:'Transport',l:'Équipements de bord conformes vérifiés',ok:!!state.transport_type},
+    {cat:'Transport',l:'Placardage / signalisation définie',ok:!!state.transport_type},
+    {cat:'Transport',l:'Restrictions tunnel et circulation vérifiées',ok:!!document.getElementById('tunnel').value},
+    {cat:'Documents',l:'Document de transport établi',ok:!!(un&&classe)},
+    {cat:'Documents',l:'Fiche W (consignes de sécurité) prête',ok:!!(un&&classe)},
+    {cat:'Documents',l:'Certificat ADR conducteur vérifié',ok:false},
+    {cat:'Documents',l:'BSD établi et signé',ok:!!bsd},
+    {cat:'Documents',l:'Récépissé collecteur agréé joint',ok:agree==='oui'},
+    {cat:'Documents',l:'Contrôle technique véhicule valide',ok:false},
+  ];
+
+  const ok=items.filter(i=>i.ok).length;
+  const total=items.length;
+  const pct=Math.round(ok/total*100);
+  document.getElementById('stat-ok').textContent=ok;
+  document.getElementById('stat-warn').textContent=0;
+  document.getElementById('stat-ko').textContent=total-ok;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=pct+'% de conformité estimée ('+ok+'/'+total+' points)';
+
+  const cats=[...new Set(items.map(i=>i.cat))];
+  document.getElementById('bilan-checklist').innerHTML=cats.map(cat=>{
+    const catItems=items.filter(i=>i.cat===cat);
+    return `<div class="bilan-cat">
+      <div class="bilan-cat-title">${cat}</div>
+      ${catItems.map(it=>`<div class="bilan-item">
+        <span class="bi-icon ${it.ok?'bi-ok':'bi-ko'}">${it.ok?'✅':'❌'}</span>
+        <span style="flex:1">${it.l}</span>
+        <span class="badge ${it.ok?'badge-ok':'badge-ko'}">${it.ok?'OK':'À faire'}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ---- RAPPORT IA ----
+async function genRapport() {
+  const un=document.getElementById('un-number').value||'non renseigné';
+  const name=document.getElementById('dot-name').value||'non renseigné';
+  const classe=document.getElementById('classe').value||'non renseigné';
+  const ge=document.getElementById('ge').value||'non renseigné';
+  const kemler=document.getElementById('kemler').value||'non renseigné';
+  const qte=document.getElementById('quantite').value||'non renseigné';
+  const typeEmb=document.getElementById('type-emb').value||'non renseigné';
+  const regime=document.getElementById('regime-lq')?.value||'plein';
+  const tunnel=document.getElementById('tunnel').value||'non renseigné';
+  const bsd=document.getElementById('bsd-num')?.value||'non renseigné';
+  const filiere=document.getElementById('filiere')?.value||'non renseigné';
+  const vehicule=state.transport_type||'non défini';
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-content').innerHTML='Génération du rapport en cours<span class="loading-dots"></span>';
+
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:`Tu es un conseiller à la sécurité TMD (CSTMD). Génère un rapport de contrôle réglementaire ADR 2025 (route uniquement) synthétique et professionnel pour :
+- Matière : UN ${un} — ${name}
+- Classe ADR : ${classe} | GE : ${ge} | Kemler : ${kemler}
+- Quantité : ${qte} kg/L
+- Conditionnement : ${typeEmb} | Régime : ${regime}
+- Code tunnel : ${tunnel}
+- Véhicule : ${vehicule}
+- BSD : ${bsd} | Filière : ${filiere}
+
+Format : sections courtes, points de vigilance CSTMD numérotés, références ADR précises. Langue française. Ton professionnel.`}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content?.map(b=>b.text||'').join('\n')||'Erreur de génération.';
+    document.getElementById('modal-content').textContent=text;
+  } catch(e) {
+    document.getElementById('modal-content').textContent='Erreur de connexion à l\'API Claude. Vérifiez votre connexion internet.\n\nErreur : '+e.message;
+  }
+}
+
+async function genFicheW() {
+  const un=document.getElementById('un-number').value||'????';
+  const name=document.getElementById('dot-name').value||'non renseigné';
+  const classe=document.getElementById('classe').value||'—';
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-content').innerHTML='Génération de la fiche W en cours<span class="loading-dots"></span>';
+
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:`Génère un modèle de consignes de sécurité écrites (fiche W) conforme ADR 5.4.3.4 pour :
+UN ${un} — ${name} — Classe ${classe}
+4 sections obligatoires : 1) Nature du danger 2) EPI requis 3) Actions conducteur en cas d'incident 4) Actions à éviter / consignes complémentaires.
+Langue française. Format structuré et pratique pour un conducteur.`}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content?.map(b=>b.text||'').join('\n')||'Erreur.';
+    document.getElementById('modal-content').textContent=text;
+  } catch(e) {
+    document.getElementById('modal-content').textContent='Erreur : '+e.message;
+  }
+}
+
+function closeModal(e) {
+  if(e.target===document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function resetAll() {
+  document.querySelectorAll('input[type=text],input[type=number]').forEach(el=>{el.value='';el.classList.remove('autofilled');});
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex=0);
+  state.transport_type=null;
+  state.currentUN=null;
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('seuil-result').className='result-info';
+  document.getElementById('seuil-result').innerHTML='<div class="rb-title">ℹ️ Saisissez un numéro ONU pour démarrer.</div>';
+  showTab('identification');
+}
+
+document.getElementById('un-number').addEventListener('blur',()=>{
+  setTimeout(()=>document.getElementById('ac-list').classList.add('hidden'),200);
+});
+
+showTab('identification');
+</script>
+<!-- CAMERA TAB -->
+<div id="tab-camera" style="display:none">
+<div style="max-width:980px;margin:0 auto;padding:20px 16px">
+<div class="card">
+  <div class="card-title">📷 Reconnaissance d'étiquette</div>
+  <div class="info-strip">💡 Prenez en photo une étiquette ADR, un bidon ou un fût. L'outil détecte le numéro UN et charge automatiquement les infos réglementaires.</div>
+
+  <button class="big-btn" onclick="startCamera()" id="btn-start-cam" style="margin-bottom:12px">📷 Activer la caméra</button>
+
+  <div id="cam-container" style="display:none;margin-bottom:12px">
+    <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px">
+      <video id="cam-video" autoplay playsinline muted style="width:100%;max-height:340px;object-fit:cover;display:block"></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:220px;height:90px;border:3px solid #1e6fbf;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4)"></div>
+      </div>
+      <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 3px #000">Centrez le numéro UN dans le cadre</div>
+    </div>
+    <button class="big-btn" onclick="capturePhoto()" style="margin-bottom:8px">📸 Prendre la photo</button>
+    <button class="big-btn sec" onclick="stopCamera()">⏹ Arrêter</button>
+  </div>
+
+  <canvas id="cam-canvas" style="display:none"></canvas>
+
+  <div id="cam-preview" style="display:none;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:600;color:#445;margin-bottom:6px">Photo capturée :</div>
+    <img id="cam-img" style="width:100%;border-radius:8px;border:1px solid #dde2ec" alt="Photo">
+  </div>
+
+  <div id="cam-result"></div>
+
+  <div style="margin-top:16px;text-align:center">
+    <div style="font-size:12px;color:#889;margin-bottom:8px">— ou choisir depuis la galerie —</div>
+    <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#f0f4fa;border:1.5px solid #dde2ec;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#334">
+      🖼️ Galerie photo
+      <input type="file" accept="image/*" id="cam-file" style="display:none" onchange="handleFilePhoto(this)">
+    </label>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+// ---- CAMERA OCR ----
+let camStream = null;
+
+function startCamera() {
+  document.getElementById('cam-result').innerHTML = '';
+  document.getElementById('cam-preview').style.display = 'none';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Caméra non disponible</div><div class="rb-body">Utilisez Safari sur iPhone.</div></div>';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment', width:{ideal:1280}, height:{ideal:720} } })
+    .then(stream => {
+      camStream = stream;
+      document.getElementById('cam-video').srcObject = stream;
+      document.getElementById('cam-container').style.display = 'block';
+      document.getElementById('btn-start-cam').style.display = 'none';
+    })
+    .catch(() => {
+      document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Accès refusé</div><div class="rb-body">Autorisez la caméra : Réglages iPhone → Safari → Caméra → Autoriser.</div></div>';
+    });
+}
+
+function stopCamera() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-container').style.display = 'none';
+  document.getElementById('btn-start-cam').style.display = 'flex';
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  showCapturedPhoto(canvas.toDataURL('image/jpeg', 0.85));
+  stopCamera();
+}
+
+function handleFilePhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => showCapturedPhoto(e.target.result);
+  reader.readAsDataURL(input.files[0]);
+}
+
+function showCapturedPhoto(dataUrl) {
+  document.getElementById('cam-img').src = dataUrl;
+  document.getElementById('cam-preview').style.display = 'block';
+  document.getElementById('cam-result').innerHTML = '<div class="result-info"><div class="rb-title">🔍 Analyse en cours...</div><div class="rb-body">Recherche du numéro UN<span class="loading-dots"></span></div></div>';
+  analyzeImageOCR(dataUrl);
+}
+
+async function analyzeImageOCR(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+          { type: 'text', text: 'Tu es expert ADR. Analyse cette image. Réponds UNIQUEMENT en JSON sans rien autour : {"un":"XXXX","found":true,"classe":"X","description":"nom matière","confiance":"haute|moyenne|faible"}. Si pas de numéro UN visible : {"un":"","found":false,"description":"non détecté","confiance":""}. Le numéro UN = 4 chiffres, souvent sur fond orange ou losange.' }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.map(b => b.text||'').join('') || '';
+    let r;
+    try { r = JSON.parse(text.replace(/```json|```/g,'').trim()); }
+    catch(e) {
+      const m = text.match(/\b(\d{4})\b/);
+      r = m ? {un:m[1],found:true,description:'détecté',confiance:'moyenne'} : {un:'',found:false,description:'non détecté',confiance:''};
+    }
+    if (r.found && r.un) {
+      document.getElementById('cam-result').innerHTML = `
+        <div class="result-ok">
+          <div class="rb-title">✅ UN ${r.un} détecté</div>
+          <div class="rb-body">${r.description||''}${r.classe ? '<br>Classe : '+r.classe : ''}<br>Confiance : ${r.confiance}</div>
+        </div>
+        <button class="big-btn" onclick="loadUNFromCamera('${r.un}')" style="margin-top:10px">🔍 Charger UN ${r.un} dans l'outil</button>`;
+    } else {
+      document.getElementById('cam-result').innerHTML = `<div class="result-warn"><div class="rb-title">⚠️ Numéro UN non détecté</div><div class="rb-body">${r.description}<br><br>Conseils : rapprochez-vous, améliorez l'éclairage, cadrez sur le numéro 4 chiffres.</div></div>`;
+    }
+  } catch(e) {
+    document.getElementById('cam-result').innerHTML = '<div class="result-warn"><div class="rb-title">⚠️ Connexion requise</div><div class="rb-body">Internet nécessaire pour l\'analyse. Saisissez le numéro UN manuellement dans Identification.</div></div>';
+  }
+}
+
+function loadUNFromCamera(unNum) {
+  showTab('identification');
+  setTimeout(() => {
+    const field = document.getElementById('un-number');
+    field.value = unNum;
+    field.dispatchEvent(new Event('input'));
+    setTimeout(() => {
+      const first = document.querySelector('.ac-item');
+      if (first) first.click();
+    }, 500);
+  }, 300);
+}
+</script>
+
+</body>
+</html>
