@@ -496,6 +496,47 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#1a1a2
   </div>
 </div>
 
+<!-- CAMERA TAB -->
+<div id="tab-camera" class="hidden">
+<div style="max-width:980px;margin:0 auto;padding:20px 16px">
+<div class="card">
+  <div class="card-title">📷 Reconnaissance d'étiquette</div>
+  <div class="info-strip">💡 Prenez en photo une étiquette ADR, un bidon ou un fût. L'outil détecte le numéro UN et charge automatiquement les infos réglementaires.</div>
+
+  <button class="big-btn" id="btn-start-cam" style="margin-bottom:12px" onclick="startCamera()">📷 Activer la caméra</button>
+
+  <div id="cam-container" style="display:none;margin-bottom:12px">
+    <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px">
+      <video id="cam-video" autoplay playsinline muted style="width:100%;max-height:340px;object-fit:cover;display:block"></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:220px;height:90px;border:3px solid #1e6fbf;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4)"></div>
+      </div>
+      <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 3px #000">Centrez le numéro UN dans le cadre</div>
+    </div>
+    <button class="big-btn" onclick="capturePhoto()" style="margin-bottom:8px">📸 Prendre la photo</button>
+    <button class="big-btn sec" onclick="stopCamera()">⏹ Arrêter</button>
+  </div>
+
+  <canvas id="cam-canvas" style="display:none"></canvas>
+
+  <div id="cam-preview" style="display:none;margin-bottom:12px">
+    <div style="font-size:12px;font-weight:600;color:#445;margin-bottom:6px">Photo capturée :</div>
+    <img id="cam-img" style="width:100%;border-radius:8px;border:1px solid #dde2ec" alt="Photo">
+  </div>
+
+  <div id="cam-result"></div>
+
+  <div style="margin-top:16px;text-align:center">
+    <div style="font-size:12px;color:#889;margin-bottom:8px">— ou choisir depuis la galerie —</div>
+    <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#f0f4fa;border:1.5px solid #dde2ec;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#334">
+      🖼️ Galerie photo
+      <input type="file" accept="image/*" id="cam-file" style="display:none" onchange="handleFilePhoto(this)">
+    </label>
+  </div>
+</div>
+</div>
+</div>
+
 <!-- MODAL RAPPORT -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
@@ -809,9 +850,10 @@ function showTab(tab) {
   document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.remove('hidden');
-  const labels=['identification','melanges','conditionnement','etiquetage','transport','documents','bilan'];
+  const labels=['identification','melanges','conditionnement','etiquetage','transport','documents','bilan','camera'];
   const btns=document.querySelectorAll('.nav-btn');
-  btns[labels.indexOf(tab)].classList.add('active');
+  const idx=labels.indexOf(tab);
+  if(idx>=0 && btns[idx]) btns[idx].classList.add('active');
   state.tab=tab;
   if(tab==='etiquetage') renderEtiquetage();
   if(tab==='bilan') renderBilan();
@@ -1585,50 +1627,6 @@ document.getElementById('un-number').addEventListener('blur',()=>{
   setTimeout(()=>document.getElementById('ac-list').classList.add('hidden'),200);
 });
 
-showTab('identification');
-</script>
-<!-- CAMERA TAB -->
-<div id="tab-camera" style="display:none">
-<div style="max-width:980px;margin:0 auto;padding:20px 16px">
-<div class="card">
-  <div class="card-title">📷 Reconnaissance d'étiquette</div>
-  <div class="info-strip">💡 Prenez en photo une étiquette ADR, un bidon ou un fût. L'outil détecte le numéro UN et charge automatiquement les infos réglementaires.</div>
-
-  <button class="big-btn" onclick="startCamera()" id="btn-start-cam" style="margin-bottom:12px">📷 Activer la caméra</button>
-
-  <div id="cam-container" style="display:none;margin-bottom:12px">
-    <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px">
-      <video id="cam-video" autoplay playsinline muted style="width:100%;max-height:340px;object-fit:cover;display:block"></video>
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="width:220px;height:90px;border:3px solid #1e6fbf;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4)"></div>
-      </div>
-      <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 3px #000">Centrez le numéro UN dans le cadre</div>
-    </div>
-    <button class="big-btn" onclick="capturePhoto()" style="margin-bottom:8px">📸 Prendre la photo</button>
-    <button class="big-btn sec" onclick="stopCamera()">⏹ Arrêter</button>
-  </div>
-
-  <canvas id="cam-canvas" style="display:none"></canvas>
-
-  <div id="cam-preview" style="display:none;margin-bottom:12px">
-    <div style="font-size:12px;font-weight:600;color:#445;margin-bottom:6px">Photo capturée :</div>
-    <img id="cam-img" style="width:100%;border-radius:8px;border:1px solid #dde2ec" alt="Photo">
-  </div>
-
-  <div id="cam-result"></div>
-
-  <div style="margin-top:16px;text-align:center">
-    <div style="font-size:12px;color:#889;margin-bottom:8px">— ou choisir depuis la galerie —</div>
-    <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#f0f4fa;border:1.5px solid #dde2ec;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#334">
-      🖼️ Galerie photo
-      <input type="file" accept="image/*" id="cam-file" style="display:none" onchange="handleFilePhoto(this)">
-    </label>
-  </div>
-</div>
-</div>
-</div>
-
-<script>
 // ---- CAMERA OCR ----
 let camStream = null;
 
@@ -1636,7 +1634,7 @@ function startCamera() {
   document.getElementById('cam-result').innerHTML = '';
   document.getElementById('cam-preview').style.display = 'none';
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Caméra non disponible</div><div class="rb-body">Utilisez Safari sur iPhone.</div></div>';
+    document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Caméra non disponible</div><div class="rb-body">Utilisez Safari sur iPhone pour accéder à la caméra.</div></div>';
     return;
   }
   navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment', width:{ideal:1280}, height:{ideal:720} } })
@@ -1646,8 +1644,8 @@ function startCamera() {
       document.getElementById('cam-container').style.display = 'block';
       document.getElementById('btn-start-cam').style.display = 'none';
     })
-    .catch(() => {
-      document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Accès refusé</div><div class="rb-body">Autorisez la caméra : Réglages iPhone → Safari → Caméra → Autoriser.</div></div>';
+    .catch(err => {
+      document.getElementById('cam-result').innerHTML = '<div class="result-ko"><div class="rb-title">❌ Accès caméra refusé</div><div class="rb-body">Autorisez la caméra dans Réglages iPhone → Confidentialité → Caméra → Safari.<br><br>Erreur : '+err.message+'</div></div>';
     });
 }
 
@@ -1685,19 +1683,19 @@ async function analyzeImageOCR(dataUrl) {
   const base64 = dataUrl.split(',')[1];
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
-          { type: 'text', text: 'Tu es expert ADR. Analyse cette image. Réponds UNIQUEMENT en JSON sans rien autour : {"un":"XXXX","found":true,"classe":"X","description":"nom matière","confiance":"haute|moyenne|faible"}. Si pas de numéro UN visible : {"un":"","found":false,"description":"non détecté","confiance":""}. Le numéro UN = 4 chiffres, souvent sur fond orange ou losange.' }
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:300,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
+          {type:'text',text:'Tu es expert ADR. Analyse cette image. Réponds UNIQUEMENT en JSON sans rien autour : {"un":"XXXX","found":true,"classe":"X","description":"nom matière","confiance":"haute|moyenne|faible"}. Si pas de numéro UN visible : {"un":"","found":false,"description":"non détecté","confiance":""}. Le numéro UN = 4 chiffres, souvent sur fond orange ou losange de danger.'}
         ]}]
       })
     });
     const data = await resp.json();
-    const text = data.content?.map(b => b.text||'').join('') || '';
+    const text = data.content?.map(b=>b.text||'').join('')||'';
     let r;
     try { r = JSON.parse(text.replace(/```json|```/g,'').trim()); }
     catch(e) {
@@ -1705,33 +1703,26 @@ async function analyzeImageOCR(dataUrl) {
       r = m ? {un:m[1],found:true,description:'détecté',confiance:'moyenne'} : {un:'',found:false,description:'non détecté',confiance:''};
     }
     if (r.found && r.un) {
-      document.getElementById('cam-result').innerHTML = `
-        <div class="result-ok">
-          <div class="rb-title">✅ UN ${r.un} détecté</div>
-          <div class="rb-body">${r.description||''}${r.classe ? '<br>Classe : '+r.classe : ''}<br>Confiance : ${r.confiance}</div>
-        </div>
-        <button class="big-btn" onclick="loadUNFromCamera('${r.un}')" style="margin-top:10px">🔍 Charger UN ${r.un} dans l'outil</button>`;
+      document.getElementById('cam-result').innerHTML = `<div class="result-ok"><div class="rb-title">✅ UN ${r.un} détecté</div><div class="rb-body">${r.description||''}${r.classe?'<br>Classe : '+r.classe:''}<br>Confiance : ${r.confiance}</div></div><button class="big-btn" onclick="loadUNFromCamera('${r.un}')" style="margin-top:10px">🔍 Charger UN ${r.un} dans l'outil</button>`;
     } else {
-      document.getElementById('cam-result').innerHTML = `<div class="result-warn"><div class="rb-title">⚠️ Numéro UN non détecté</div><div class="rb-body">${r.description}<br><br>Conseils : rapprochez-vous, améliorez l'éclairage, cadrez sur le numéro 4 chiffres.</div></div>`;
+      document.getElementById('cam-result').innerHTML = `<div class="result-warn"><div class="rb-title">⚠️ Numéro UN non détecté</div><div class="rb-body">${r.description}<br><br>Conseils : rapprochez-vous, améliorez l'éclairage, cadrez sur le numéro à 4 chiffres.</div></div>`;
     }
   } catch(e) {
-    document.getElementById('cam-result').innerHTML = '<div class="result-warn"><div class="rb-title">⚠️ Connexion requise</div><div class="rb-body">Internet nécessaire pour l\'analyse. Saisissez le numéro UN manuellement dans Identification.</div></div>';
+    document.getElementById('cam-result').innerHTML = '<div class="result-warn"><div class="rb-title">⚠️ Connexion requise</div><div class="rb-body">Internet nécessaire pour l\'analyse. Vous pouvez aussi saisir le numéro UN manuellement dans l\'onglet Identification.</div></div>';
   }
 }
 
 function loadUNFromCamera(unNum) {
   showTab('identification');
-  setTimeout(() => {
+  setTimeout(()=>{
     const field = document.getElementById('un-number');
     field.value = unNum;
     field.dispatchEvent(new Event('input'));
-    setTimeout(() => {
-      const first = document.querySelector('.ac-item');
-      if (first) first.click();
-    }, 500);
+    setTimeout(()=>{ const first=document.querySelector('.ac-item'); if(first) first.click(); }, 500);
   }, 300);
 }
-</script>
 
+showTab('identification');
+</script>
 </body>
 </html>
